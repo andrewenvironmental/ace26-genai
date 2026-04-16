@@ -41,7 +41,7 @@ param existingKeyVaultName string = ''
 param keyVaultName string = ''
 
 @description('Create an Azure Container Registry for optional app/container workflows. Not required for the Foundry account-native project.')
-param createContainerRegistry bool = true
+param createContainerRegistry bool = false
 
 @description('Existing Azure Container Registry used for optional app/container workflows.')
 param existingContainerRegistryName string = ''
@@ -50,7 +50,7 @@ param existingContainerRegistryName string = ''
 param containerRegistryName string = ''
 
 @description('Create Application Insights for optional app diagnostics. If false, existingApplicationInsightsName is used.')
-param createApplicationInsights bool = true
+param createApplicationInsights bool = false
 
 @description('Existing Application Insights component used for optional app diagnostics.')
 param existingApplicationInsightsName string = ''
@@ -59,7 +59,7 @@ param existingApplicationInsightsName string = ''
 param applicationInsightsName string = ''
 
 @description('Create a dedicated Azure AI Services / Azure OpenAI account. If false, existingAiServicesAccountName is used.')
-param createAiServicesAccount bool = false
+param createAiServicesAccount bool = true
 
 @description('Existing Azure AI Services or Azure OpenAI account name.')
 param existingAiServicesAccountName string = ''

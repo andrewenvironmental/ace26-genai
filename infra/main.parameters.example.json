@@ -32,10 +32,10 @@
     "searchSku": {
       "value": "free"
     },
-    "createFoundryResources": {
+    "createAiServicesAccount": {
       "value": true
     },
-    "createAiServicesAccount": {
+    "createAiServicesProject": {
       "value": true
     },
     "deployModelDeployments": {
