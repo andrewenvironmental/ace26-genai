@@ -53,7 +53,7 @@ resource app 'Microsoft.Web/sites@2023-12-01' = if (createWebApp) {
   }
 }
 
-output appServicePlanName string = createWebApp ? plan.name : ''
-output webAppName string = createWebApp ? app.name : ''
-output webAppUrl string = createWebApp ? 'https://${app.properties.defaultHostName}' : ''
-output webAppPrincipalId string = createWebApp ? app.identity.principalId : ''
+output appServicePlanName string = createWebApp ? plan!.name : ''
+output webAppName string = createWebApp ? app!.name : ''
+output webAppUrl string = createWebApp ? 'https://${app!.properties.defaultHostName}' : ''
+output webAppPrincipalId string = createWebApp ? app!.identity.principalId : ''

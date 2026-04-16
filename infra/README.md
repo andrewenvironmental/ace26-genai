@@ -30,7 +30,7 @@ Lowest-cost defaults:
 
 - Azure AI Search defaults to `free`. Azure AI Search SKU cannot be downgraded in place after creation, so moving from `basic` to `free` requires recreating the Search service or the resource group.
 - Application Insights is disabled by default because it can create a managed Log Analytics resource group.
-- Container Registry is disabled by default for the workshop demo unless Foundry requires it for a specific workflow.
+- Container Registry is disabled by default for the workshop demo unless app/container workflows require it.
 - Model deployments are disabled by default. Deploy only the specific chat and embedding deployments needed for the workshop.
 
 Before provisioning, run the enablement check:
@@ -69,6 +69,9 @@ permission errors, ask an Owner or User Access Administrator to run the commands
 ```powershell
 .\infra\scripts\Print-RequiredRoleAssignments.ps1
 ```
+
+The focused handoff for this specific portal error is in `FOUNDRY_RBAC_FIX.md`.
+The roles that were actually granted during setup are recorded in `PERMISSIONS_GRANTED.md`.
 
 Example deployment flow:
 

@@ -70,7 +70,6 @@ Not currently required by the written activity:
 
 - Register required Azure resource providers:
   - Microsoft.CognitiveServices
-  - Microsoft.MachineLearningServices
   - Microsoft.Search
   - Microsoft.Storage
   - Microsoft.KeyVault

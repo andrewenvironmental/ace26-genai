@@ -23,5 +23,3 @@ infra/resource-group.json
 Thumbs.db
 .vscode/
 *.code-workspace
-infra/IT_ENABLEMENT.md
-infra/scripts/Test-AzureEnablement.ps1
