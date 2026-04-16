@@ -1,0 +1,27 @@
+# Local Azure deployment context. Keep real tenant, subscription, and resource names out of git.
+.env
+.env.*
+!.env.example
+
+# Local Bicep/Azure parameter files may contain tenant-specific values.
+infra/**/*.local.json
+infra/**/*.local.bicepparam
+infra/**/local.*
+
+# Azure CLI / deployment outputs
+.azure/**/*.local.*
+.azure/**/outputs*.json
+.azure/**/what-if*.json
+infra/main.json
+infra/resource-group.json
+
+# Extracted Office document scratch files
+.azure/docx-extract/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+*.code-workspace
+infra/IT_ENABLEMENT.md
+infra/scripts/Test-AzureEnablement.ps1
