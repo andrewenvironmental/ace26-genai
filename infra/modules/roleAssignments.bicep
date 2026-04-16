@@ -13,13 +13,10 @@ param searchServiceName string
 @description('Azure AI Services / Azure OpenAI account name.')
 param aiServicesAccountName string
 
-@description('Azure AI Foundry hub workspace name.')
-param foundryHubName string
+@description('Azure AI Foundry project name under the AI Services account.')
+param aiServicesProjectName string
 
-@description('Azure AI Foundry project workspace name.')
-param foundryProjectName string
-
-@description('Managed identity principal IDs for Foundry hub/project resources.')
+@description('Managed identity principal IDs for Foundry project resources.')
 param foundryPrincipalIds array
 
 @description('Managed identity principal ID for Azure AI Search. Leave empty if using an existing service without a managed identity.')
@@ -64,12 +61,9 @@ resource aiServicesAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' exi
   name: aiServicesAccountName
 }
 
-resource foundryHub 'Microsoft.MachineLearningServices/workspaces@2025-06-01' existing = {
-  name: foundryHubName
-}
-
-resource foundryProject 'Microsoft.MachineLearningServices/workspaces@2025-06-01' existing = {
-  name: foundryProjectName
+resource aiServicesProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' existing = {
+  parent: aiServicesAccount
+  name: aiServicesProjectName
 }
 
 resource searchStorageContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(searchPrincipalId)) {
@@ -183,18 +177,8 @@ resource foundryKeyVaultContributors 'Microsoft.Authorization/roleAssignments@20
 }]
 
 resource participantProjectAiUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in participantPrincipalIds: {
-  name: guid(foundryProject.id, principalId, azureAiUserRoleId)
-  scope: foundryProject
-  properties: {
-    principalId: principalId
-    principalType: participantPrincipalType
-    roleDefinitionId: azureAiUserRoleId
-  }
-}]
-
-resource participantHubAiUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in participantPrincipalIds: {
-  name: guid(foundryHub.id, principalId, azureAiUserRoleId)
-  scope: foundryHub
+  name: guid(aiServicesProject.id, principalId, azureAiUserRoleId)
+  scope: aiServicesProject
   properties: {
     principalId: principalId
     principalType: participantPrincipalType
@@ -222,4 +206,4 @@ resource participantSearchIndexReaders 'Microsoft.Authorization/roleAssignments@
   }
 }]
 
-output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 4)
+output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 3)

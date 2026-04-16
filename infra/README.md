@@ -57,6 +57,19 @@ python infra/scripts/index_pdf_to_search.py `
   --pdf examples/fort-worth-fy2021-2025-adopted-cip.pdf
 ```
 
+To create a Foundry-native vector store using the account key:
+
+```powershell
+.\infra\scripts\Create-FoundryVectorStore.ps1
+```
+
+If the Foundry portal shows `Microsoft.CognitiveServices/accounts/AIServices/assets/read`
+permission errors, ask an Owner or User Access Administrator to run the commands printed by:
+
+```powershell
+.\infra\scripts\Print-RequiredRoleAssignments.ps1
+```
+
 Example deployment flow:
 
 ```powershell

@@ -40,38 +40,23 @@ param existingKeyVaultName string = ''
 @description('Key Vault name to create. Leave empty to generate a deterministic name.')
 param keyVaultName string = ''
 
-@description('Create an Azure Container Registry for a new Foundry workspace. If false, existingContainerRegistryName is used.')
+@description('Create an Azure Container Registry for optional app/container workflows. Not required for the Foundry account-native project.')
 param createContainerRegistry bool = true
 
-@description('Existing Azure Container Registry used when creating a dedicated Foundry workspace.')
+@description('Existing Azure Container Registry used for optional app/container workflows.')
 param existingContainerRegistryName string = ''
 
 @description('Container Registry name to create. Leave empty to generate a deterministic name.')
 param containerRegistryName string = ''
 
-@description('Create Application Insights for a new Foundry workspace. If false, existingApplicationInsightsName is used.')
+@description('Create Application Insights for optional app diagnostics. If false, existingApplicationInsightsName is used.')
 param createApplicationInsights bool = true
 
-@description('Existing Application Insights component used when creating a dedicated Foundry workspace.')
+@description('Existing Application Insights component used for optional app diagnostics.')
 param existingApplicationInsightsName string = ''
 
 @description('Application Insights name to create. Leave empty to generate a deterministic name.')
 param applicationInsightsName string = ''
-
-@description('Create a dedicated Azure AI Foundry hub/project. If false, existing workspace names are used.')
-param createFoundryResources bool = false
-
-@description('Existing Azure AI Foundry hub workspace name.')
-param existingFoundryHubName string = ''
-
-@description('Existing Azure AI Foundry project workspace name.')
-param existingFoundryProjectName string = ''
-
-@description('Foundry hub workspace name to create. Leave empty to generate a deterministic name.')
-param foundryHubName string = ''
-
-@description('Foundry project workspace name to create. Leave empty to generate a deterministic name.')
-param foundryProjectName string = ''
 
 @description('Create a dedicated Azure AI Services / Azure OpenAI account. If false, existingAiServicesAccountName is used.')
 param createAiServicesAccount bool = false
@@ -81,6 +66,12 @@ param existingAiServicesAccountName string = ''
 
 @description('Azure AI Services / Azure OpenAI account name to create. Leave empty to generate a deterministic name.')
 param aiServicesAccountName string = ''
+
+@description('Create or update an account-native Azure AI Foundry project under the AI Services account.')
+param createAiServicesProject bool = true
+
+@description('Azure AI Foundry project name. Leave empty to use <ai-services-account-name>-project.')
+param aiServicesProjectName string = ''
 
 @allowed([
   'AIServices'
@@ -160,6 +151,9 @@ param participantPrincipalType string = 'Group'
 @description('Store generated connection values and keys in Key Vault. Requires permissions to set Key Vault secrets.')
 param storeSecretsInKeyVault bool = false
 
+@description('Azure AI Search index name used for workshop documents.')
+param searchIndexName string = 'documents'
+
 @description('Create a free-tier demo web app placeholder.')
 param createWebApp bool = true
 
@@ -192,15 +186,10 @@ var effectiveContainerRegistryName = createContainerRegistry
 var effectiveApplicationInsightsName = createApplicationInsights
   ? (empty(applicationInsightsName) ? '${shortName}-appi-${suffix}' : applicationInsightsName)
   : existingApplicationInsightsName
-var effectiveFoundryHubName = createFoundryResources
-  ? (empty(foundryHubName) ? '${shortName}-hub-${suffix}' : foundryHubName)
-  : existingFoundryHubName
-var effectiveFoundryProjectName = createFoundryResources
-  ? (empty(foundryProjectName) ? '${shortName}-proj-${suffix}' : foundryProjectName)
-  : existingFoundryProjectName
 var effectiveAiServicesAccountName = createAiServicesAccount
   ? (empty(aiServicesAccountName) ? '${shortName}-ai-${suffix}' : aiServicesAccountName)
   : existingAiServicesAccountName
+var effectiveAiServicesProjectName = empty(aiServicesProjectName) ? '${effectiveAiServicesAccountName}-project' : aiServicesProjectName
 var effectiveSearchServiceName = createSearchService
   ? (empty(searchServiceName) ? '${shortName}-search-${suffix}' : searchServiceName)
   : existingSearchServiceName
@@ -253,22 +242,6 @@ module appInsights 'modules/appInsights.bicep' = {
   }
 }
 
-module foundry 'modules/foundry.bicep' = {
-  name: 'workshop-foundry'
-  params: {
-    createFoundryResources: createFoundryResources
-    hubWorkspaceName: effectiveFoundryHubName
-    projectWorkspaceName: effectiveFoundryProjectName
-    location: location
-    storageAccountId: storage.outputs.storageAccountId
-    keyVaultId: keyVault.outputs.keyVaultId
-    containerRegistryId: containerRegistry.outputs.containerRegistryId
-    applicationInsightsId: appInsights.outputs.applicationInsightsId
-    enablePublicNetworkAccess: enablePublicNetworkAccess
-    tags: tags
-  }
-}
-
 module aiServices 'modules/aiServices.bicep' = {
   name: 'workshop-ai-services'
   params: {
@@ -276,6 +249,9 @@ module aiServices 'modules/aiServices.bicep' = {
     accountName: effectiveAiServicesAccountName
     location: aiServicesLocation
     accountKind: aiServicesKind
+    createAiServicesProject: createAiServicesProject
+    projectName: effectiveAiServicesProjectName
+    projectDisplayName: 'ACE AI Workshop'
     enablePublicNetworkAccess: enablePublicNetworkAccess
     deployModelDeployments: deployModelDeployments
     modelDeployments: modelDeployments
@@ -312,7 +288,7 @@ module webApp 'modules/webApp.bicep' = {
       AZURE_OPENAI_CHAT_DEPLOYMENT: chatDeploymentName
       AZURE_OPENAI_EMBEDDING_DEPLOYMENT: embeddingDeploymentName
       AZURE_SEARCH_ENDPOINT: search.outputs.searchEndpoint
-      AZURE_SEARCH_INDEX: 'documents'
+      AZURE_SEARCH_INDEX: searchIndexName
       AZURE_STORAGE_CONTAINER: documentContainerName
     }
     tags: tags
@@ -327,11 +303,9 @@ module roleAssignments 'modules/roleAssignments.bicep' = if (enableRoleAssignmen
     keyVaultName: keyVault.outputs.keyVaultName
     searchServiceName: search.outputs.searchServiceName
     aiServicesAccountName: aiServices.outputs.accountName
-    foundryHubName: foundry.outputs.hubWorkspaceName
-    foundryProjectName: foundry.outputs.projectWorkspaceName
+    aiServicesProjectName: aiServices.outputs.projectName
     foundryPrincipalIds: [
-      foundry.outputs.hubPrincipalId
-      foundry.outputs.projectPrincipalId
+      aiServices.outputs.projectPrincipalId
     ]
     searchPrincipalId: search.outputs.searchManagedIdentityPrincipalId
     participantPrincipalIds: participantPrincipalIds
@@ -351,22 +325,23 @@ module keyVaultSecrets 'modules/keyvaultSecrets.bicep' = if (storeSecretsInKeyVa
     embeddingDeploymentName: aiServices.outputs.embeddingDeploymentName
     searchServiceName: search.outputs.searchServiceName
     searchEndpoint: search.outputs.searchEndpoint
-    searchIndexName: 'ai-workshops'
+    searchIndexName: searchIndexName
   }
 }
 
-output foundryHubName string = foundry.outputs.hubWorkspaceName
-output foundryProjectName string = foundry.outputs.projectWorkspaceName
-output foundryHubResourceId string = foundry.outputs.hubWorkspaceId
-output foundryProjectResourceId string = foundry.outputs.projectWorkspaceId
 output aiFoundryPortalUrl string = 'https://ai.azure.com'
 output aiServicesAccountName string = aiServices.outputs.accountName
 output aiServicesEndpoint string = aiServices.outputs.endpoint
+output aiFoundryEndpoint string = aiServices.outputs.aiFoundryEndpoint
+output aiServicesProjectName string = aiServices.outputs.projectName
+output aiServicesProjectResourceId string = aiServices.outputs.projectId
+output aiServicesProjectEndpoint string = aiServices.outputs.projectEndpoint
+output aiServicesProjectPrincipalId string = aiServices.outputs.projectPrincipalId
 output chatDeploymentName string = aiServices.outputs.chatDeploymentName
 output embeddingDeploymentName string = aiServices.outputs.embeddingDeploymentName
 output searchServiceName string = search.outputs.searchServiceName
 output searchEndpoint string = search.outputs.searchEndpoint
-output searchIndexName string = 'ai-workshops'
+output searchIndexName string = searchIndexName
 output storageAccountName string = storage.outputs.storageAccountName
 output documentContainerName string = documentContainerName
 output keyVaultName string = keyVault.outputs.keyVaultName

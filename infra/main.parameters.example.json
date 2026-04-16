@@ -56,6 +56,9 @@
     "storeSecretsInKeyVault": {
       "value": false
     },
+    "searchIndexName": {
+      "value": "documents"
+    },
     "createWebApp": {
       "value": true
     },
