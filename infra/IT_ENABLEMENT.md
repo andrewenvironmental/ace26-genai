@@ -35,6 +35,7 @@ Run:
 - Confirm the region for the chat model deployment.
 - Confirm the region for the embedding model deployment.
 - Confirm available quota and SKU for each model deployment.
+- For the 100-participant workshop profile, confirm East US 2 `GlobalStandard` quota for `gpt-5.4-pro` capacity 160, `gpt-5.4-mini` capacity 300, `gpt-5.4-nano` capacity 1000, and `text-embedding-3-small` capacity 100.
 - Confirm whether content filtering / responsible AI policy requires IT or Microsoft review.
 
 ## Policy And Networking

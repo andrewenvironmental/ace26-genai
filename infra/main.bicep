@@ -86,23 +86,37 @@ param deployModelDeployments bool = false
 @description('Model deployments to create when deployModelDeployments is true.')
 param modelDeployments array = [
   {
+    name: 'gpt-5.4-pro'
+    modelName: 'gpt-5.4-pro'
+    modelVersion: '2026-03-05'
+    skuName: 'GlobalStandard'
+    capacity: 160
+  }
+  {
     name: 'gpt-5.4-mini'
     modelName: 'gpt-5.4-mini'
     modelVersion: '2026-03-17'
     skuName: 'GlobalStandard'
-    capacity: 1
+    capacity: 300
+  }
+  {
+    name: 'gpt-5.4-nano'
+    modelName: 'gpt-5.4-nano'
+    modelVersion: '2026-03-17'
+    skuName: 'GlobalStandard'
+    capacity: 1000
   }
   {
     name: 'text-embedding-3-small'
     modelName: 'text-embedding-3-small'
     modelVersion: '1'
     skuName: 'GlobalStandard'
-    capacity: 1
+    capacity: 100
   }
 ]
 
 @description('Chat model deployment name workshop participants should select in Foundry.')
-param chatDeploymentName string = 'gpt-5.4-mini'
+param chatDeploymentName string = 'gpt-5.4-pro'
 
 @description('Embedding deployment name used when creating a grounded data connection.')
 param embeddingDeploymentName string = 'text-embedding-3-small'

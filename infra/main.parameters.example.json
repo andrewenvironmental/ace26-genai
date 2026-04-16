@@ -42,7 +42,7 @@
       "value": false
     },
     "chatDeploymentName": {
-      "value": "gpt-5.4-mini"
+      "value": "gpt-5.4-pro"
     },
     "embeddingDeploymentName": {
       "value": "text-embedding-3-small"

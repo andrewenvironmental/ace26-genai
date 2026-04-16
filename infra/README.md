@@ -72,6 +72,7 @@ permission errors, ask an Owner or User Access Administrator to run the commands
 
 The focused handoff for this specific portal error is in `FOUNDRY_RBAC_FIX.md`.
 The roles that were actually granted during setup are recorded in `PERMISSIONS_GRANTED.md`.
+The 100-participant model capacity plan is in `WORKSHOP_CAPACITY.md`.
 
 Example deployment flow:
 
@@ -92,6 +93,18 @@ az deployment group what-if `
   --resource-group $env:AZURE_RESOURCE_GROUP `
   --template-file infra/main.bicep `
   --parameters infra/main.parameters.local.json
+```
+
+To scale model deployments for the live workshop:
+
+```powershell
+.\infra\scripts\Set-WorkshopModelCapacity.ps1 -Mode Workshop
+```
+
+To return to a smaller dev profile after the workshop:
+
+```powershell
+.\infra\scripts\Set-WorkshopModelCapacity.ps1 -Mode Dev
 ```
 
 To tear down and reprovision the demo environment:
