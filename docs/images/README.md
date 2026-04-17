@@ -1,18 +1,18 @@
 # Screenshot Assets
 
-Save refreshed New Foundry screenshots here using these filenames:
+The guide uses these PNG filenames:
 
-- `figure-01-project-home.png`
-- `figure-02-build-models.png`
-- `figure-03-model-playground.png`
-- `figure-04-instructions.png`
-- `figure-05-parameters.png`
-- `figure-06-file-search-documents.png`
-- `figure-07-grounded-response-references.png`
-- `figure-08-structured-table-response.png`
-- `figure-09-guardrail-response.png`
+- `figure-01-project-home.png`: captured from the workshop project and sanitized.
+- `figure-02-build-models.png`: captured from the workshop project and sanitized.
+- `figure-03-model-playground.png`: captured from the workshop project.
+- `figure-04-instructions.png`: captured from the workshop project.
+- `figure-05-parameters.png`: captured from the workshop project.
+- `figure-06-file-search-documents.png`: captured from the workshop project.
+- `figure-07-grounded-response-references.png`: captured from the workshop project.
+- `figure-08-structured-table-response.png`: captured from the workshop project.
+- `figure-09-guardrail-response.png`: captured from the workshop project.
 
-The Markdown guide references these paths directly. Missing files are expected while the guide is in draft mode.
+Refresh these screenshots if the Microsoft Foundry UI changes before publication.
 
 Screenshot guidance:
 
