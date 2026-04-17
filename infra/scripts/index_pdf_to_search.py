@@ -1,6 +1,7 @@
 import argparse
 import base64
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -97,13 +98,21 @@ def extract_documents(pdf_path, title, max_chars):
 def main():
     parser = argparse.ArgumentParser(description="Index a PDF into Azure AI Search.")
     parser.add_argument("--search-endpoint", required=True)
-    parser.add_argument("--api-key", required=True)
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get("AZURE_SEARCH_API_KEY", ""),
+        help="Azure AI Search admin key. Defaults to AZURE_SEARCH_API_KEY env var.",
+    )
     parser.add_argument("--index-name", default="documents")
     parser.add_argument("--pdf", required=True)
     parser.add_argument("--title", default="Fort Worth FY2021-2025 Adopted CIP")
     parser.add_argument("--api-version", default="2024-07-01")
     parser.add_argument("--max-chars", type=int, default=3500)
     args = parser.parse_args()
+
+    if not args.api_key:
+        print("API key required. Pass --api-key or set AZURE_SEARCH_API_KEY.", file=sys.stderr)
+        return 1
 
     pdf_path = Path(args.pdf)
     if not pdf_path.exists():

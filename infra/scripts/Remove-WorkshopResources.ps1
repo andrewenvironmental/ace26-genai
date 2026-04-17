@@ -1,5 +1,5 @@
 param(
-    [string]$WorkshopResourceGroup = 'rg-ace26-genai-workshop-dev',
+    [string]$WorkshopResourceGroup = $env:AZURE_RESOURCE_GROUP,
 
     [switch]$IncludeManagedResourceGroups,
 

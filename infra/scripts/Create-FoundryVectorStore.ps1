@@ -1,7 +1,7 @@
 param(
-    [string]$ResourceGroup = 'rg-ace26-genai-workshop-dev',
-    [string]$AiServicesAccountName = 'aceaiworksho-ai-is6hct',
-    [string]$ProjectName = 'aceaiworksho-ai-is6hct-project',
+    [string]$ResourceGroup = $env:AZURE_RESOURCE_GROUP,
+    [string]$AiServicesAccountName = $env:AZURE_AI_SERVICES_ACCOUNT,
+    [string]$ProjectName = $env:AZURE_AI_SERVICES_PROJECT,
     [string]$VectorStoreName = 'documents',
     [string]$FilePath = 'examples/fort-worth-fy2021-2025-adopted-cip.pdf'
 )

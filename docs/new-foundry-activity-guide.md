@@ -8,7 +8,8 @@ Large language models can be guided with instructions, parameters, and curated d
 
 This activity uses:
 
-- Microsoft Foundry project: `aceaiworksho-ai-is6hct-project`
+- Microsoft Foundry project: provided by your instructor
+- Model deployment for warmup: `gpt-5.4-nano`
 - Model deployment for prompt exercises: `gpt-5.4-mini`
 - Model deployment for document-grounded exercises: `gpt-5.4-pro`
 - File search vector store: `documents`
@@ -33,15 +34,13 @@ This activity uses:
 
 3. If prompted, choose the workshop tenant or directory.
 
-4. Open the workshop project:
-
-   `aceaiworksho-ai-is6hct-project`
+4. Open the workshop project. Your instructor will provide the project name.
 
 5. In the top navigation, make sure the `New Foundry` toggle is on.
 
 6. In the top navigation, select `Build`, then in the left navigation select `Models`.
 
-7. Open the model deployment named `gpt-5.4-mini`.
+7. Open the model deployment named `gpt-5.4-nano` for a quick warmup, then switch to `gpt-5.4-mini` for the main exercises.
 
    You will use `gpt-5.4-pro` later when you add the workshop document.
 
@@ -209,13 +208,15 @@ Consider:
 
 ### Adjust Reasoning Effort
 
-Open `Reasoning Effort` and compare the available choices.
+Open `Reasoning Effort` and compare the available choices. For these workshop exercises, use `medium`. The `low` setting is not available for this deployment and will return an error.
 
 Ask:
 
 ```text
 What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?
 ```
+
+Then change Reasoning Effort to `high` and ask the same question.
 
 Consider:
 
@@ -224,6 +225,8 @@ Consider:
 - Which setting would you choose for factual technical work?
 
 ## Activity Part 3: Knowledge Limits and Hallucinations
+
+Large language models can produce responses that sound convincing but contain incorrect information. In the AI field, these are called "hallucinations." The model is not intentionally misleading you — it is generating text based on patterns, and sometimes those patterns lead to plausible-sounding but unsupported claims. This is why verifying AI-generated answers against primary sources is essential, especially for technical and regulatory work.
 
 ### Knowledge Cutoffs
 
@@ -275,7 +278,7 @@ This vector store contains the Fort Worth FY2021-2025 Adopted 5 Year Capital Imp
 
 For this section, open the `gpt-5.4-pro` deployment.
 
-In the setup panel:
+In the setup panel (the left side of the playground — scroll down if you do not see `Tools`):
 
 1. Find `Tools`.
 2. Select `Add`.
@@ -334,7 +337,7 @@ Consider:
 
 ### Create a Structured Output
 
-For the structured table exercise, open `gpt-5.4-mini` and attach the same `documents` file search vector store.
+**Switch to the `gpt-5.4-mini` deployment for this exercise.** The smaller model handles structured table output more reliably in the playground. Attach the same `documents` file search vector store.
 
 Ask:
 

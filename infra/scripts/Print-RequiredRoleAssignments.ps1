@@ -1,12 +1,18 @@
 param(
-    [string]$SubscriptionId = 'd522d6af-2079-410e-a2d1-e93e2b912485',
-    [string]$ResourceGroup = 'rg-ace26-genai-workshop-dev',
-    [string]$AiServicesAccountName = 'aceaiworksho-ai-is6hct',
-    [string]$ProjectName = 'aceaiworksho-ai-is6hct-project',
-    [string]$SearchServiceName = 'aceaiworksho-search-is6hct',
-    [string]$StorageAccountName = 'aceaiworkshostis6hct',
-    [string]$UserObjectId = '6b08945f-7519-47e0-9589-fe3723d2883f'
+    [string]$SubscriptionId = $env:AZURE_SUBSCRIPTION_ID,
+    [string]$ResourceGroup = $env:AZURE_RESOURCE_GROUP,
+    [string]$AiServicesAccountName = $env:AZURE_AI_SERVICES_ACCOUNT,
+    [string]$ProjectName = $env:AZURE_AI_SERVICES_PROJECT,
+    [string]$SearchServiceName = $env:AZURE_SEARCH_SERVICE,
+    [string]$StorageAccountName = $env:AZURE_STORAGE_ACCOUNT,
+    [string]$UserObjectId = $env:AZURE_USER_OBJECT_ID
 )
+
+foreach ($name in 'SubscriptionId','ResourceGroup','AiServicesAccountName','ProjectName','SearchServiceName','StorageAccountName','UserObjectId') {
+    if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $name).Value)) {
+        throw "Missing required parameter -$name or corresponding environment variable. See infra/README.md for setup."
+    }
+}
 
 $accountScope = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.CognitiveServices/accounts/$AiServicesAccountName"
 $projectScope = "$accountScope/projects/$ProjectName"

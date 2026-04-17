@@ -50,19 +50,33 @@ The full capacity plan is in `infra/WORKSHOP_CAPACITY.md`.
 
 ## Current Infrastructure Values
 
-- Resource group: `rg-ace26-genai-workshop-dev`
-- AI Services account: `aceaiworksho-ai-is6hct`
-- Foundry project: `aceaiworksho-ai-is6hct-project`
+These values come from `.env` or `infra/main.parameters.local.json`. Replace placeholders with your actual environment values.
+
+- Resource group: `$AZURE_RESOURCE_GROUP`
+- AI Services account: `$AZURE_AI_SERVICES_ACCOUNT`
+- Foundry project: `$AZURE_AI_SERVICES_PROJECT`
 - Chat deployment: `gpt-5.4-pro`
 - Participant deployment: `gpt-5.4-mini`
 - High-concurrency fallback deployment: `gpt-5.4-nano`
 - Embedding deployment: `text-embedding-3-small`
 - Vector store: `documents`
 - Search index: `documents`
-- Web app placeholder: `https://aceaiworksho-web-is6hct.azurewebsites.net`
+- Web app placeholder: see deployment outputs
 
 ## Known Operations Notes
 
 - If vector stores do not appear, confirm the user has `Azure AI User` on the AI Services resource and project.
 - If budget creation fails, IT may need to grant billing-scope permissions beyond `Cost Management Contributor`.
 - If file search feels slow, use a smaller model variant for the workshop or narrow the question to a specific topic.
+
+## Participant Troubleshooting Guide
+
+Common issues participants may encounter and how to help them:
+
+- **"I can't find the workshop project."** Confirm they are signed in to the correct tenant/directory. Have them select their profile icon in the top right and verify or switch directories.
+- **"I don't see File search or Tools in the setup panel."** They may need to scroll down in the left setup panel. Confirm `New Foundry` is toggled on.
+- **"File search is not returning results."** Confirm the `documents` vector store is attached (visible in the left panel under `File search`). If missing, walk through the attach steps again.
+- **"My response is taking a very long time."** Grounded (file search) answers take longer, especially broad prompts. Ask the participant to wait rather than resubmit. If it takes more than 3-4 minutes, suggest switching to a more focused prompt.
+- **"I got an error about reasoning effort."** The `low` setting is not available for `gpt-5.4-pro`. Have them set it to `medium` or higher.
+- **"The model deployment is not listed."** Confirm they opened `Build > Models > Deployments`. The deployment may be in a different tab or the page may need a refresh.
+- **"I'm getting rate-limited or throttled."** Multiple participants submitting broad prompts simultaneously can hit capacity. Ask the group to pause, then stagger submissions or switch to shorter prompts.

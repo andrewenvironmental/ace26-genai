@@ -1,7 +1,7 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$ResourceGroup = 'rg-ace26-genai-workshop-dev',
-    [string]$AiServicesAccountName = 'aceaiworksho-ai-is6hct',
+    [string]$ResourceGroup = $env:AZURE_RESOURCE_GROUP,
+    [string]$AiServicesAccountName = $env:AZURE_AI_SERVICES_ACCOUNT,
 
     [ValidateSet('Dev', 'Workshop')]
     [string]$Mode = 'Workshop',

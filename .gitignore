@@ -23,3 +23,6 @@ infra/resource-group.json
 Thumbs.db
 .vscode/
 *.code-workspace
+docs/old/
+plan/
+docs/instructor-notes.md

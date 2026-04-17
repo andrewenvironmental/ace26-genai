@@ -2,18 +2,20 @@
 
 This file records the permissions needed to make the ACE26 Foundry workshop environment usable and repeatable.
 
+Replace all `<placeholder>` values with your environment-specific values from `.env`.
+
 ## Current User
 
 User principal:
 
 ```text
-6b08945f-7519-47e0-9589-fe3723d2883f
+<user-object-id>
 ```
 
 User sign-in:
 
 ```text
-agoldberg@ekiconsult.com
+<user-email>
 ```
 
 ## Subscription-Level Roles
@@ -21,7 +23,7 @@ agoldberg@ekiconsult.com
 Scope:
 
 ```text
-/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485
+/subscriptions/<subscription-id>
 ```
 
 Roles:
@@ -38,7 +40,7 @@ Notes:
 - `Cost Management Contributor` was visible on the subscription, but budget deployment still returned:
 
 ```text
-Access to data for entityId: d522d6af-2079-410e-a2d1-e93e2b912485 is unauthorized.
+Access to data for entityId: <subscription-id> is unauthorized.
 ```
 
 This likely requires additional billing-scope permissions or billing account access beyond Azure RBAC.
@@ -48,7 +50,7 @@ This likely requires additional billing-scope permissions or billing account acc
 Foundry account scope:
 
 ```text
-/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485/resourceGroups/rg-ace26-genai-workshop-dev/providers/Microsoft.CognitiveServices/accounts/aceaiworksho-ai-is6hct
+/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.CognitiveServices/accounts/<ai-services-account>
 ```
 
 Roles assigned to the user:
@@ -64,7 +66,7 @@ Cognitive Services User
 Project scope:
 
 ```text
-/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485/resourceGroups/rg-ace26-genai-workshop-dev/providers/Microsoft.CognitiveServices/accounts/aceaiworksho-ai-is6hct/projects/aceaiworksho-ai-is6hct-project
+/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.CognitiveServices/accounts/<ai-services-account>/projects/<ai-services-project>
 ```
 
 Roles assigned to the user:
@@ -88,13 +90,13 @@ Microsoft.CognitiveServices/accounts/AIServices/assets/read
 Project:
 
 ```text
-aceaiworksho-ai-is6hct-project
+<ai-services-project>
 ```
 
 Project managed identity principal ID:
 
 ```text
-4c8507d7-888e-4823-be61-73a5a1b53333
+<project-managed-identity-id>
 ```
 
 Role assigned:
@@ -106,7 +108,7 @@ Azure AI User
 Scope:
 
 ```text
-/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485/resourceGroups/rg-ace26-genai-workshop-dev/providers/Microsoft.CognitiveServices/accounts/aceaiworksho-ai-is6hct
+/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.CognitiveServices/accounts/<ai-services-account>
 ```
 
 Roles still recommended but not assigned because current user lacks role-assignment rights at the Search and Storage scopes:
@@ -120,16 +122,16 @@ Recommended commands for an Owner or User Access Administrator:
 
 ```powershell
 az role assignment create `
-  --assignee-object-id 4c8507d7-888e-4823-be61-73a5a1b53333 `
+  --assignee-object-id <project-managed-identity-id> `
   --assignee-principal-type ServicePrincipal `
   --role "Search Index Data Contributor" `
-  --scope "/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485/resourceGroups/rg-ace26-genai-workshop-dev/providers/Microsoft.Search/searchServices/aceaiworksho-search-is6hct"
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Search/searchServices/<search-service>"
 
 az role assignment create `
-  --assignee-object-id 4c8507d7-888e-4823-be61-73a5a1b53333 `
+  --assignee-object-id <project-managed-identity-id> `
   --assignee-principal-type ServicePrincipal `
   --role "Storage Blob Data Reader" `
-  --scope "/subscriptions/d522d6af-2079-410e-a2d1-e93e2b912485/resourceGroups/rg-ace26-genai-workshop-dev/providers/Microsoft.Storage/storageAccounts/aceaiworkshostis6hct"
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Storage/storageAccounts/<storage-account>"
 ```
 
 ## Replication Checklist
