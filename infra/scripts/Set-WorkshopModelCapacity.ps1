@@ -14,6 +14,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+foreach ($name in 'ResourceGroup','AiServicesAccountName') {
+    if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $name).Value)) {
+        throw "Missing required parameter -$name or corresponding environment variable. See infra/README.md for setup."
+    }
+}
+
 $profiles = @{
     Dev = @(
         @{

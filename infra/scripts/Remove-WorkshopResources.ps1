@@ -8,6 +8,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+if ([string]::IsNullOrWhiteSpace($WorkshopResourceGroup)) {
+    throw "Missing required parameter -WorkshopResourceGroup or AZURE_RESOURCE_GROUP environment variable."
+}
+
 $groups = @($WorkshopResourceGroup)
 
 if ($IncludeManagedResourceGroups) {

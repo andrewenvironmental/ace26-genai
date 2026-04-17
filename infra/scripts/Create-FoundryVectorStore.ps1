@@ -8,6 +8,16 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+foreach ($name in 'ResourceGroup','AiServicesAccountName','ProjectName') {
+    if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $name).Value)) {
+        throw "Missing required parameter -$name or corresponding environment variable. See infra/README.md for setup."
+    }
+}
+
+if (-not (Test-Path -LiteralPath $FilePath)) {
+    throw "PDF file not found: $FilePath"
+}
+
 $account = az cognitiveservices account show `
     --resource-group $ResourceGroup `
     --name $AiServicesAccountName `
@@ -15,6 +25,9 @@ $account = az cognitiveservices account show `
     --output json | ConvertFrom-Json
 
 $projectEndpoint = "$($account.endpoint.TrimEnd('/'))/api/projects/$ProjectName"
+
+# This setup helper uses an account key because the workshop environment allows local auth.
+# If local auth is disabled by policy, update this script to use an Entra token instead.
 $key = az cognitiveservices account keys list `
     --resource-group $ResourceGroup `
     --name $AiServicesAccountName `

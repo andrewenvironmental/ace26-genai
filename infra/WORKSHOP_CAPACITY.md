@@ -69,6 +69,8 @@ Return to a smaller dev profile:
 
 The dev profile keeps the deployments available, but reduces `gpt-5.4-mini`, `gpt-5.4-nano`, and `text-embedding-3-small` to capacity 1.
 
+Create a calendar reminder or automation for the post-workshop scale-down. Do not leave the workshop profile running after the event unless the workshop owner has approved the ongoing quota and cost.
+
 Override individual capacities if IT grants more quota:
 
 ```powershell
@@ -85,4 +87,5 @@ Override individual capacities if IT grants more quota:
 - Current `gpt-5.4-pro` quota in East US 2 only leaves room up to capacity 160. More `pro` headroom requires a quota increase or another region/deployment strategy.
 - `gpt-5.4-mini`, `gpt-5.4`, and `gpt-5.4-nano` have more available quota in East US 2 and are better candidates for participant-scale traffic.
 - Azure AI Search is currently on the free SKU for cost control. If the future web app relies on Azure AI Search for all 100 participants, plan a temporary upgrade/recreate to a paid SKU before the workshop, then scale back or delete after.
+- Decision needed before the workshop: keep Azure AI Search on `free` for the Foundry-only activity, or recreate the Search service on `basic` if the web app becomes part of the live participant flow.
 - Budget alerts still need billing-scope enablement. Subscription-level `Cost Management Contributor` was not enough in this tenant.

@@ -15,6 +15,8 @@ This activity uses:
 - File search vector store: `documents`
 - Source document: Fort Worth FY2021-2025 Adopted 5 Year Capital Improvement Program
 
+A deployment is a hosted model that you can open and chat with in the playground.
+
 ## Learning Objectives
 
 - Interact with a large language model in Microsoft Foundry.
@@ -54,7 +56,17 @@ Estimated time: 20 minutes
 
 In this part, you will use the Microsoft Foundry model playground to send prompts, inspect responses, and change the model instructions. The goal is not to get one perfect answer. The goal is to see how small changes in wording and context change the model's behavior.
 
-### 1. Open the Playground
+### 1. Quick Warmup
+
+Open `gpt-5.4-nano`, select the `Playground` tab, and ask:
+
+```text
+In one sentence, what can generative AI help a water utility team do?
+```
+
+This first prompt lets everyone confirm they can reach the playground before moving into the main exercises.
+
+### 2. Open the Main Playground
 
 From the workshop project:
 
@@ -71,7 +83,7 @@ The playground has two main working areas:
 
 ![Figure 3 - Model playground with deployment, instructions, and chat panel](images/figure-03-model-playground.png)
 
-### 2. Send a General Prompt
+### 3. Send a General Prompt
 
 In the chat box, ask:
 
@@ -85,11 +97,11 @@ Read the response and make one quick note:
 - Was the answer general or specific?
 - Would you trust this answer in a technical memo without checking sources?
 
-What is happening: your prompt is sent to a cloud-hosted model deployment. The model generates a response by predicting likely next tokens based on its training and the context you provide in the playground.
+What is happening: your prompt is sent to a cloud-hosted model deployment. The model generates a response based on patterns in its training data and the instructions you provide in the playground.
 
 Broad prompts often produce broad answers. Later prompts will show how to control length, audience, and format.
 
-### 3. Try a Public Education Task
+### 4. Try a Public Education Task
 
 Imagine your team is drafting a short public-facing fact sheet for water utility customers.
 
@@ -105,7 +117,7 @@ Before changing anything, observe the answer:
 - Is the language accessible to the public?
 - Does the response include technical terms that may need explanation?
 
-### 4. Add Instructions
+### 5. Add Instructions
 
 In the `Instructions` field, replace the default text with:
 
@@ -130,7 +142,7 @@ Compare the two answers:
 
 ![Figure 4 - Instructions updated for public education style](images/figure-04-instructions.png)
 
-### 5. Refine the Output Format
+### 6. Refine the Output Format
 
 Keep the same instructions and ask:
 
@@ -152,7 +164,7 @@ Explain drinking water treatment for a first-grade audience.
 
 Notice how the same topic can become a technical explanation, a public message, or a classroom explanation depending on how the task is framed.
 
-### 6. Optional: Generate a Stronger System Prompt
+### 7. Optional: Generate a Stronger System Prompt
 
 If the playground includes a `Generate system prompt` or similar option, try it:
 
@@ -208,7 +220,7 @@ Consider:
 
 ### Adjust Reasoning Effort
 
-Open `Reasoning Effort` and compare the available choices. For these workshop exercises, use `medium`. The `low` setting is not available for this deployment and will return an error.
+Open `Reasoning Effort` and compare the available choices. For these workshop exercises, use `medium`. If the playground rejects a reasoning setting, return to `medium` and continue.
 
 Ask:
 
@@ -224,23 +236,34 @@ Consider:
 - Does the answer become more concise or more detailed?
 - Which setting would you choose for factual technical work?
 
-## Activity Part 3: Knowledge Limits and Hallucinations
+## Activity Part 3: Knowledge Limits and Unsupported Claims
 
-Large language models can produce responses that sound convincing but contain incorrect information. In the AI field, these are called "hallucinations." The model is not intentionally misleading you — it is generating text based on patterns, and sometimes those patterns lead to plausible-sounding but unsupported claims. This is why verifying AI-generated answers against primary sources is essential, especially for technical and regulatory work.
+Large language models can produce responses that sound convincing but contain incorrect information. In the AI field, these are called "hallucinations." The model is not intentionally misleading you - it is generating text based on patterns, and sometimes those patterns lead to plausible-sounding but unsupported claims. This is why verifying AI-generated answers against primary sources is essential, especially for technical and regulatory work.
 
-### Knowledge Cutoffs
+### Recent Public Facts
 
-Ask a current-event question:
+Ask a recent public-fact question:
 
 ```text
-Who won the Super Bowl in 2025?
+As of April 2026, who won Super Bowl LX and what was the final score?
 ```
+
+Then check a trusted news or sports source. The point is not the football answer. The point is to see whether the model gives a confident answer, admits uncertainty, or mixes up years, teams, or scores.
+
+Now try a water-sector example:
+
+```text
+As of April 2026, what is the current status of EPA's national drinking water rule for PFAS?
+```
+
+After the answer, check EPA's PFAS implementation page or another official source.
 
 Consider:
 
 - Does the model answer confidently?
-- Does it say it cannot know?
-- Is the answer factual?
+- Does it give a date or source for the claim?
+- Does it confuse the original final rule with later implementation updates?
+- What would you cite if this were going into a technical memo?
 
 ### Organization-Specific Questions
 
@@ -251,7 +274,7 @@ Tell me about water conservation efforts in Dallas.
 ```
 
 ```text
-What are some major water treatment challenges in Fort Worth?
+What are the top three water treatment challenges Fort Worth Water has identified for 2026?
 ```
 
 ```text
@@ -278,7 +301,9 @@ This vector store contains the Fort Worth FY2021-2025 Adopted 5 Year Capital Imp
 
 For this section, open the `gpt-5.4-pro` deployment.
 
-In the setup panel (the left side of the playground — scroll down if you do not see `Tools`):
+Keep `Reasoning Effort` set to `medium` for the grounded exercises unless your instructor says otherwise.
+
+In the setup panel (the left side of the playground - scroll down if you do not see `Tools`):
 
 1. Find `Tools`.
 2. Select `Add`.
@@ -407,3 +432,11 @@ Key takeaways:
 - Citations and references help users verify the answer.
 - Prompting is iterative.
 - File search adds retrieval steps, so grounded answers can be slower than general chat.
+- Always verify AI-generated answers against primary sources before using them in reports or decisions.
+
+## Troubleshooting
+
+- If you cannot find the workshop project, confirm you are signed in to the correct tenant or directory.
+- If you do not see `Tools` or `File search`, scroll down in the left setup panel and confirm `New Foundry` is turned on.
+- If a grounded answer is slow, wait for it to finish instead of submitting the same prompt again.
+- If a model deployment is missing, refresh `Build > Models > Deployments` and ask your instructor to confirm the project.
