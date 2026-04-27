@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workshopName": {
+      "value": "ace-ai-workshop"
+    },
+    "location": {
+      "value": "westus2"
+    },
+    "aiServicesLocation": {
+      "value": "eastus2"
+    },
+    "createStorageAccount": {
+      "value": true
+    },
+    "documentContainerName": {
+      "value": "workshop-docs"
+    },
+    "createKeyVault": {
+      "value": true
+    },
+    "createApplicationInsights": {
+      "value": false
+    },
+    "createContainerRegistry": {
+      "value": false
+    },
+    "createSearchService": {
+      "value": true
+    },
+    "searchSku": {
+      "value": "free"
+    },
+    "createAiServicesAccount": {
+      "value": true
+    },
+    "createAiServicesProject": {
+      "value": true
+    },
+    "deployModelDeployments": {
+      "value": false
+    },
+    "chatDeploymentName": {
+      "value": "gpt-5.4-pro"
+    },
+    "embeddingDeploymentName": {
+      "value": "text-embedding-3-small"
+    },
+    "enableRoleAssignments": {
+      "value": false
+    },
+    "participantPrincipalIds": {
+      "value": []
+    },
+    "storeSecretsInKeyVault": {
+      "value": false
+    },
+    "searchIndexName": {
+      "value": "documents"
+    },
+    "createWebApp": {
+      "value": true
+    },
+    "appServicePlanSku": {
+      "value": "F1"
+    }
+  }
+}
