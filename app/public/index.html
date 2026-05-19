@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ACE26 Workshop Playground</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="setup-panel" aria-label="Setup">
+        <div class="brand-block">
+          <div class="mark" aria-hidden="true">AI</div>
+          <div>
+            <p class="eyebrow">ACE26</p>
+            <h1>Workshop Playground</h1>
+          </div>
+        </div>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Deployment</h2>
+            <span id="chat-status" class="status-dot"></span>
+          </div>
+          <div class="resource-row">
+            <span>Model</span>
+            <strong id="deployment-name">Loading</strong>
+          </div>
+          <div class="resource-row">
+            <span>Search index</span>
+            <strong id="search-index">Loading</strong>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <label for="instructions">Instructions</label>
+          <textarea id="instructions" rows="10"></textarea>
+        </section>
+
+        <section class="panel-section controls">
+          <div class="control-row">
+            <label for="reasoning-effort">Reasoning</label>
+            <select id="reasoning-effort">
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="high">High</option>
+              <option value="">Default</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label for="max-tokens">Max tokens</label>
+            <input id="max-tokens" type="number" min="100" max="4096" step="100" value="900">
+          </div>
+          <label class="toggle-row">
+            <input id="use-grounding" type="checkbox" checked>
+            <span>Use workshop documents</span>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <button id="new-chat" class="secondary-button" type="button">New chat</button>
+        </section>
+      </aside>
+
+      <main class="chat-panel" aria-label="Chat">
+        <header class="chat-header">
+          <div>
+            <p class="eyebrow">Model playground</p>
+            <h2 id="workspace-name">ACE26 GenAI Workshop</h2>
+          </div>
+          <a id="foundry-link" class="ghost-link" href="https://ai.azure.com" target="_blank" rel="noreferrer">Foundry</a>
+        </header>
+
+        <div id="prompt-strip" class="prompt-strip" aria-label="Prompt examples"></div>
+
+        <section id="messages" class="messages" aria-live="polite"></section>
+
+        <form id="chat-form" class="composer">
+          <textarea id="prompt-input" rows="3" placeholder="Ask a workshop question"></textarea>
+          <button id="send-button" type="submit">Send</button>
+        </form>
+      </main>
+
+      <aside class="source-panel" aria-label="Sources">
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Sources</h2>
+            <span id="source-count">0</span>
+          </div>
+          <div id="sources" class="sources empty-state">No retrieved sources yet.</div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Activity</h2>
+            <span>Live</span>
+          </div>
+          <div class="activity-list">
+            <button class="activity-card" type="button" data-prompt="Can you tell me about innovative drinking water treatment technologies?">
+              <strong>General response</strong>
+              <span>Broad technical prompt</span>
+            </button>
+            <button class="activity-card" type="button" data-prompt="Explain drinking water treatment for a first-grade audience.">
+              <strong>Audience shift</strong>
+              <span>Reading-level control</span>
+            </button>
+            <button class="activity-card" type="button" data-prompt="Use the documents. In 5 bullets or fewer, name drinking-water-related capital improvement project categories in Fort Worth. Keep each bullet under 20 words.">
+              <strong>Grounded answer</strong>
+              <span>CIP document search</span>
+            </button>
+            <button class="activity-card" type="button" data-prompt="In two sentences, what changed after adding instructions or retrieved documents to the answer?">
+              <strong>Share-out</strong>
+              <span>Compare learning</span>
+            </button>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

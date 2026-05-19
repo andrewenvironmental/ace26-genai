@@ -19,6 +19,9 @@ param aiServicesProjectName string
 @description('Managed identity principal IDs for Foundry project resources.')
 param foundryPrincipalIds array
 
+@description('Managed identity principal IDs for workshop application resources that need model and search read access.')
+param applicationPrincipalIds array = []
+
 @description('Managed identity principal ID for Azure AI Search. Leave empty if using an existing service without a managed identity.')
 param searchPrincipalId string
 
@@ -206,4 +209,36 @@ resource participantSearchIndexReaders 'Microsoft.Authorization/roleAssignments@
   }
 }]
 
-output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 3)
+resource applicationCognitiveServicesUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(aiServicesAccount.id, principalId, cognitiveServicesUserRoleId, 'workshop-app-foundry')
+  scope: aiServicesAccount
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: cognitiveServicesUserRoleId
+  }
+}]
+
+resource applicationAiOpenAiUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(aiServicesAccount.id, principalId, cognitiveServicesOpenAiUserRoleId, 'workshop-app-openai')
+  scope: aiServicesAccount
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: cognitiveServicesOpenAiUserRoleId
+  }
+}]
+
+resource applicationSearchIndexReaders 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(searchService.id, principalId, searchIndexDataReaderRoleId, 'workshop-app')
+  scope: searchService
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: searchIndexDataReaderRoleId
+  }
+}]
+
+var nonEmptyApplicationPrincipalIds = filter(applicationPrincipalIds, principalId => !empty(principalId))
+
+output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 3) + (length(nonEmptyApplicationPrincipalIds) * 3)
