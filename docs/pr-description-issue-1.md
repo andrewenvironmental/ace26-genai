@@ -13,7 +13,7 @@ Adds a lightweight ACE26 Workshop Playground app as a repo-hosted backup/teachin
 - Adds an instructor-facing API usage note showing how chat and search requests flow through the app.
 - Adds an interactive share-out prompt in the activity panel.
 - Adds demo risk-mitigation notes and identifies existing static backup artifacts.
-- Adds a Jupyter/Colab backup notebook with live Azure and offline sample modes.
+- Adds a Colab-first backup notebook with live Azure and offline sample modes, plus a runbook and repo-level Colab link.
 - Updates Bicep role assignments so the web app managed identity can call Foundry/OpenAI inference and read Azure AI Search.
 
 ## Still Open

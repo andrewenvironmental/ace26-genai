@@ -10,10 +10,18 @@ Issue #1 called for practical backup paths for the live workshop demo. The activ
 
 ## Backup Demo
 
+Primary attendee fallback:
+
+- Use the Colab notebook in offline mode: `notebooks/ace26-chat-playground-backup.ipynb`.
+- Share the runbook in `docs/colab-fallback.md`.
+- Keep `USE_LIVE_AZURE = False` for room-wide reliability.
+
+Instructor/helper fallback:
+
 - Use the app in `app/`.
 - Run locally with Azure CLI auth or deploy to the workshop App Service.
 - Use the same Azure AI Services account, model deployment, and Search index as the primary demo.
-- Use `notebooks/ace26-chat-playground-backup.ipynb` for a Colab/Jupyter backup with live Azure or offline sample mode.
+- Use notebook live mode only from an instructor-controlled session.
 
 ## Static Artifacts
 

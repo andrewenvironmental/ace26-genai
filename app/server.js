@@ -42,7 +42,7 @@ const samplePrompts = [
   "How does drinking water treatment work?",
   "Explain drinking water treatment in three bullet points.",
   "Use the documents. Answer in one short sentence: what is WTP Minor Improvements? Cite the file.",
-  "Use the documents. Return only a markdown table with exactly 2 rows and 3 columns: category, description, cost. Rows: WTP Minor Improvements; Major Mains Bucket. Keep descriptions under 10 words."
+  "Use the documents. Return only a markdown table with exactly 2 rows and 2 columns: category and description. Rows: WTP Minor Improvements; Major Mains Bucket. Keep descriptions under 10 words."
 ];
 
 const defaultInstructions =
