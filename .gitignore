@@ -34,4 +34,5 @@ plan/
 docs/instructor-notes.md
 docs/colab-fallback.md
 docs/azure-config-discovery.md
-docs/colab-fallback.md
+docs/demo-risk-mitigation.md
+docs/deployment-azure-app-service.md

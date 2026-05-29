@@ -83,7 +83,14 @@ Response:
 
 ## Authentication
 
-In Azure App Service, the server uses the web app's system-assigned managed identity.
+In Azure App Service, the server uses the web app's system-assigned managed identity for Azure AI and Search calls. Runtime API keys are a local-development or break-glass fallback only.
+
+For a public workshop URL, do not leave `/api/chat` and `/api/search` open anonymously. Configure one of:
+
+- `PUBLIC_API_ACCESS_MODE=code` with `WORKSHOP_ACCESS_CODE` or `WORKSHOP_ACCESS_CODES`.
+- `PUBLIC_API_ACCESS_MODE=app-service-auth` with Azure App Service Authentication enabled.
+
+`PUBLIC_API_RATE_LIMIT_PER_MINUTE` applies to chat and direct search requests.
 
 Locally, the server falls back to Azure CLI tokens:
 
