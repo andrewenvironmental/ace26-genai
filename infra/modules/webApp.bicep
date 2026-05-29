@@ -13,6 +13,12 @@ param location string
 @description('App Service plan SKU name.')
 param skuName string
 
+@description('Deploy the web app as a Linux custom container. If false, creates a Windows Node.js App Service.')
+param useLinuxContainer bool = true
+
+@description('Container image name used for the initial App Service configuration. The CI workflow updates this after it pushes a real image.')
+param containerImageName string = ''
+
 @description('App settings for the web app.')
 param appSettings object
 
@@ -27,7 +33,7 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = if (createWebApp) {
     name: skuName
   }
   properties: {
-    reserved: false
+    reserved: useLinuxContainer
   }
 }
 
@@ -35,7 +41,7 @@ resource app 'Microsoft.Web/sites@2023-12-01' = if (createWebApp) {
   name: webAppName
   location: location
   tags: tags
-  kind: 'app'
+  kind: useLinuxContainer ? 'app,linux,container' : 'app'
   identity: {
     type: 'SystemAssigned'
   }
@@ -45,7 +51,11 @@ resource app 'Microsoft.Web/sites@2023-12-01' = if (createWebApp) {
     siteConfig: {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      appCommandLine: 'node server.js'
+      appCommandLine: useLinuxContainer ? '' : 'node server.js'
+      linuxFxVersion: useLinuxContainer
+        ? 'DOCKER|${empty(containerImageName) ? 'mcr.microsoft.com/appsvc/staticsite:latest' : containerImageName}'
+        : ''
+      acrUseManagedIdentityCreds: useLinuxContainer
       appSettings: [for settingName in items(appSettings): {
         name: settingName.key
         value: string(settingName.value)

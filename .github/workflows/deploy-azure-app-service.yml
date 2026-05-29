@@ -1,0 +1,191 @@
+name: Deploy public app to Azure App Service
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - app/**
+      - .github/workflows/deploy-azure-app-service.yml
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: public-app-azure-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CONTAINER_PORT: "8080"
+  IMAGE_REPOSITORY: ${{ vars.AZURE_IMAGE_REPOSITORY || 'ace26-public-app' }}
+
+jobs:
+  build-and-deploy:
+    name: Build image and deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate deployment variables
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_CONTAINER_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+        run: |
+          missing=()
+          for name in \
+            AZURE_CLIENT_ID \
+            AZURE_CONTAINER_REGISTRY_NAME \
+            AZURE_RESOURCE_GROUP \
+            AZURE_SUBSCRIPTION_ID \
+            AZURE_TENANT_ID \
+            AZURE_WEBAPP_NAME
+          do
+            if [ -z "${!name:-}" ]; then
+              missing+=("${name}")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required GitHub environment variables: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Sign in to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve container registry
+        id: acr
+        shell: bash
+        run: |
+          login_server="$(az acr show \
+            --name "${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}" \
+            --query loginServer \
+            --output tsv)"
+          echo "login-server=${login_server}" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to Azure Container Registry
+        shell: bash
+        run: az acr login --name "${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}"
+
+      - name: Build and push app image
+        id: image
+        shell: bash
+        env:
+          LOGIN_SERVER: ${{ steps.acr.outputs.login-server }}
+        run: |
+          image="${LOGIN_SERVER}/${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+          docker build --file app/Dockerfile --tag "${image}" app
+          docker push "${image}"
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Configure App Service settings
+        shell: bash
+        env:
+          AI_FOUNDRY_PORTAL_URL: ${{ vars.AI_FOUNDRY_PORTAL_URL }}
+          ALLOW_PRODUCTION_API_KEYS: ${{ vars.ALLOW_PRODUCTION_API_KEYS }}
+          AZURE_AI_SERVICES_ENDPOINT: ${{ vars.AZURE_AI_SERVICES_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ vars.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENT }}
+          AZURE_OPENAI_CHAT_DEPLOYMENTS: ${{ vars.AZURE_OPENAI_CHAT_DEPLOYMENTS }}
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_TOKEN_SCOPE: ${{ vars.AZURE_OPENAI_TOKEN_SCOPE }}
+          AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+          AZURE_SEARCH_API_VERSION: ${{ vars.AZURE_SEARCH_API_VERSION }}
+          AZURE_SEARCH_ENDPOINT: ${{ vars.AZURE_SEARCH_ENDPOINT }}
+          AZURE_SEARCH_INDEX: ${{ vars.AZURE_SEARCH_INDEX }}
+          AZURE_SEARCH_INDEXES: ${{ vars.AZURE_SEARCH_INDEXES }}
+          AZURE_STORAGE_CONTAINER: ${{ vars.AZURE_STORAGE_CONTAINER }}
+          CHAT_DEPLOYMENT_NAME: ${{ vars.CHAT_DEPLOYMENT_NAME }}
+          CHAT_DEPLOYMENT_NAMES: ${{ vars.CHAT_DEPLOYMENT_NAMES }}
+          PUBLIC_API_ACCESS_MODE: ${{ vars.PUBLIC_API_ACCESS_MODE }}
+          PUBLIC_API_RATE_LIMIT_PER_MINUTE: ${{ vars.PUBLIC_API_RATE_LIMIT_PER_MINUTE }}
+          WORKSHOP_NAME: ${{ vars.WORKSHOP_NAME }}
+          WORKSHOP_ACCESS_CODE: ${{ secrets.WORKSHOP_ACCESS_CODE }}
+          WORKSHOP_ACCESS_CODES: ${{ secrets.WORKSHOP_ACCESS_CODES }}
+        run: |
+          settings=(
+            "NODE_ENV=production"
+            "PORT=${CONTAINER_PORT}"
+            "WEBSITES_PORT=${CONTAINER_PORT}"
+          )
+
+          add_if_present() {
+            local name="$1"
+            local value="${!name:-}"
+            if [ -n "${value}" ]; then
+              settings+=("${name}=${value}")
+            fi
+          }
+
+          for name in \
+            AI_FOUNDRY_PORTAL_URL \
+            ALLOW_PRODUCTION_API_KEYS \
+            AZURE_AI_SERVICES_ENDPOINT \
+            AZURE_OPENAI_API_KEY \
+            AZURE_OPENAI_API_VERSION \
+            AZURE_OPENAI_CHAT_DEPLOYMENT \
+            AZURE_OPENAI_CHAT_DEPLOYMENTS \
+            AZURE_OPENAI_ENDPOINT \
+            AZURE_OPENAI_TOKEN_SCOPE \
+            AZURE_SEARCH_API_KEY \
+            AZURE_SEARCH_API_VERSION \
+            AZURE_SEARCH_ENDPOINT \
+            AZURE_SEARCH_INDEX \
+            AZURE_SEARCH_INDEXES \
+            AZURE_STORAGE_CONTAINER \
+            CHAT_DEPLOYMENT_NAME \
+            CHAT_DEPLOYMENT_NAMES \
+            PUBLIC_API_ACCESS_MODE \
+            PUBLIC_API_RATE_LIMIT_PER_MINUTE \
+            WORKSHOP_NAME \
+            WORKSHOP_ACCESS_CODE \
+            WORKSHOP_ACCESS_CODES
+          do
+            add_if_present "${name}"
+          done
+
+          az webapp config appsettings set \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_WEBAPP_NAME }}" \
+            --settings "${settings[@]}" \
+            --output none
+
+          az webapp identity assign \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_WEBAPP_NAME }}" \
+            --output none
+
+          az webapp config set \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_WEBAPP_NAME }}" \
+            --generic-configurations '{"acrUseManagedIdentityCreds": true}' \
+            --output none
+
+      - name: Deploy container image to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          images: ${{ steps.image.outputs.image }}
+
+      - name: Restart App Service
+        shell: bash
+        run: |
+          az webapp restart \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_WEBAPP_NAME }}" \
+            --output none

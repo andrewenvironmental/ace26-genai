@@ -40,8 +40,8 @@ param existingKeyVaultName string = ''
 @description('Key Vault name to create. Leave empty to generate a deterministic name.')
 param keyVaultName string = ''
 
-@description('Create an Azure Container Registry for optional app/container workflows. Not required for the Foundry account-native project.')
-param createContainerRegistry bool = false
+@description('Create an Azure Container Registry for the public web app container image.')
+param createContainerRegistry bool = true
 
 @description('Existing Azure Container Registry used for optional app/container workflows.')
 param existingContainerRegistryName string = ''
@@ -118,6 +118,9 @@ param modelDeployments array = [
 @description('Chat model deployment name workshop participants should select in Foundry.')
 param chatDeploymentName string = 'gpt-5.4-pro'
 
+@description('Comma-separated chat model deployment names exposed in the workshop web app model selector.')
+param playgroundChatDeploymentNames string = 'gpt-5.4-nano,gpt-5.4-mini,gpt-5.4-pro'
+
 @description('Embedding deployment name used when creating a grounded data connection.')
 param embeddingDeploymentName string = 'text-embedding-3-small'
 
@@ -168,8 +171,11 @@ param storeSecretsInKeyVault bool = false
 @description('Azure AI Search index name used for workshop documents.')
 param searchIndexName string = 'documents'
 
-@description('Create a free-tier demo web app placeholder.')
+@description('Create the public workshop web app.')
 param createWebApp bool = true
+
+@description('Deploy the public workshop web app as a Linux custom container. This should stay true for the GitHub Actions workflow in this repo.')
+param useLinuxContainerWebApp bool = true
 
 @description('Web app name to create. Leave empty to generate a deterministic name.')
 param webAppName string = ''
@@ -178,11 +184,15 @@ param webAppName string = ''
 param appServicePlanName string = ''
 
 @allowed([
-  'F1'
   'B1'
+  'B2'
+  'B3'
+  'S1'
+  'P0V3'
+  'P1V3'
 ])
-@description('App Service plan SKU. F1 is lowest-cost/free but limited.')
-param appServicePlanSku string = 'F1'
+@description('App Service plan SKU. Linux custom containers require a Basic or higher App Service plan.')
+param appServicePlanSku string = 'B1'
 
 var normalizedWorkshopName = toLower(replace(replace(replace(workshopName, '-', ''), '_', ''), ' ', ''))
 var shortName = length(normalizedWorkshopName) > 12 ? substring(normalizedWorkshopName, 0, 12) : normalizedWorkshopName
@@ -297,19 +307,25 @@ module webApp 'modules/webApp.bicep' = {
     webAppName: effectiveWebAppName
     location: location
     skuName: appServicePlanSku
+    useLinuxContainer: useLinuxContainerWebApp
+    containerImageName: ''
     appSettings: {
       WORKSHOP_NAME: workshopName
       AZURE_AI_SERVICES_ENDPOINT: aiServices.outputs.endpoint
       AZURE_OPENAI_CHAT_DEPLOYMENT: chatDeploymentName
+      AZURE_OPENAI_CHAT_DEPLOYMENTS: playgroundChatDeploymentNames
       AZURE_OPENAI_EMBEDDING_DEPLOYMENT: embeddingDeploymentName
       AZURE_OPENAI_API_VERSION: 'v1'
       AZURE_SEARCH_ENDPOINT: search.outputs.searchEndpoint
       AZURE_SEARCH_INDEX: searchIndexName
+      AZURE_SEARCH_INDEXES: searchIndexName
       AZURE_SEARCH_API_VERSION: '2024-07-01'
       AZURE_STORAGE_CONTAINER: documentContainerName
       AI_FOUNDRY_PORTAL_URL: 'https://ai.azure.com'
-      SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
-      WEBSITE_NODE_DEFAULT_VERSION: '~20'
+      PUBLIC_API_ACCESS_MODE: 'code'
+      PUBLIC_API_RATE_LIMIT_PER_MINUTE: '120'
+      PORT: '8080'
+      WEBSITES_PORT: '8080'
     }
     tags: tags
   }
@@ -321,6 +337,7 @@ module roleAssignments 'modules/roleAssignments.bicep' = if (enableRoleAssignmen
     storageAccountName: storage.outputs.storageAccountName
     documentContainerName: documentContainerName
     keyVaultName: keyVault.outputs.keyVaultName
+    containerRegistryName: containerRegistry.outputs.containerRegistryName
     searchServiceName: search.outputs.searchServiceName
     aiServicesAccountName: aiServices.outputs.accountName
     aiServicesProjectName: aiServices.outputs.projectName
@@ -368,5 +385,7 @@ output searchIndexName string = searchIndexName
 output storageAccountName string = storage.outputs.storageAccountName
 output documentContainerName string = documentContainerName
 output keyVaultName string = keyVault.outputs.keyVaultName
+output containerRegistryName string = containerRegistry.outputs.containerRegistryName
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output webAppName string = webApp.outputs.webAppName
 output webAppUrl string = webApp.outputs.webAppUrl

@@ -3,28 +3,28 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ACE26 Workshop Playground</title>
+    <title>ACE26 AI Workshop Lab</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <div class="shell">
-      <aside class="setup-panel" aria-label="Setup">
+    <div class="app-shell">
+      <aside class="setup-panel" aria-label="Playground setup">
         <div class="brand-block">
           <div class="mark" aria-hidden="true">AI</div>
           <div>
             <p class="eyebrow">ACE26</p>
-            <h1>Workshop Playground</h1>
+            <h1>AI Workshop Lab</h1>
           </div>
         </div>
 
         <section class="panel-section">
           <div class="section-title">
-            <h2>Deployment</h2>
-            <span id="chat-status" class="status-dot"></span>
+            <h2>Project</h2>
+            <span id="chat-status" class="status-pill">Loading</span>
           </div>
           <div class="resource-row">
-            <span>Model</span>
-            <strong id="deployment-name">Loading</strong>
+            <span>Workspace</span>
+            <strong id="workspace-name">Loading</strong>
           </div>
           <div class="resource-row">
             <span>Search index</span>
@@ -32,56 +32,106 @@
           </div>
         </section>
 
+        <section id="access-panel" class="panel-section access-panel" hidden>
+          <label for="access-code">Workshop access code</label>
+          <div class="access-row">
+            <input id="access-code" type="password" autocomplete="off" placeholder="Enter code">
+            <button id="save-access-code" class="ghost-button" type="button">Save</button>
+          </div>
+          <p id="access-help" class="field-help">Required before chat or source search requests.</p>
+        </section>
+
         <section class="panel-section">
-          <label for="instructions">Instructions</label>
-          <textarea id="instructions" rows="10"></textarea>
+          <label for="model-select">Model deployment</label>
+          <select id="model-select"></select>
+          <p id="model-help" class="field-help">Loading model options.</p>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <h2>Instructions</h2>
+            <button id="reset-instructions" class="text-button" type="button">Reset</button>
+          </div>
+          <textarea id="instructions" rows="9"></textarea>
+          <div class="preset-grid" aria-label="Instruction presets">
+            <button class="preset-button" type="button" data-preset="default">Workshop</button>
+            <button class="preset-button" type="button" data-preset="public">Public education</button>
+            <button class="preset-button" type="button" data-preset="guardrail">Guardrail</button>
+          </div>
         </section>
 
         <section class="panel-section controls">
           <div class="control-row">
-            <label for="reasoning-effort">Reasoning</label>
+            <label for="reasoning-effort">Reasoning effort</label>
             <select id="reasoning-effort">
               <option value="medium">Medium</option>
               <option value="low">Low</option>
               <option value="high">High</option>
+              <option value="minimal">Minimal</option>
               <option value="">Default</option>
             </select>
           </div>
           <div class="control-row">
-            <label for="max-tokens">Max tokens</label>
+            <label for="max-tokens">Max completion tokens</label>
             <input id="max-tokens" type="number" min="100" max="4096" step="100" value="900">
           </div>
-          <label class="toggle-row">
-            <input id="use-grounding" type="checkbox" checked>
-            <span>Use workshop documents</span>
-          </label>
+          <div class="control-row">
+            <label for="source-top">Retrieved snippets</label>
+            <input id="source-top" type="number" min="1" max="8" step="1" value="4">
+          </div>
+          <div class="stacked-control">
+            <label for="data-source-select">Data source</label>
+            <select id="data-source-select"></select>
+            <p id="data-source-help" class="field-help">No grounding selected.</p>
+          </div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-actions">
           <button id="new-chat" class="secondary-button" type="button">New chat</button>
+          <button id="reset-lab" class="ghost-button" type="button">Reset lab</button>
         </section>
       </aside>
 
-      <main class="chat-panel" aria-label="Chat">
-        <header class="chat-header">
+      <main class="workbench" aria-label="Workshop activity">
+        <header class="topbar">
           <div>
             <p class="eyebrow">Model playground</p>
-            <h2 id="workspace-name">ACE26 GenAI Workshop</h2>
+            <h2 id="app-title">ACE26 GenAI Workshop</h2>
           </div>
-          <a id="foundry-link" class="ghost-link" href="https://ai.azure.com" target="_blank" rel="noreferrer">Foundry</a>
+          <div class="topbar-actions">
+            <span id="connection-pill" class="connection-pill">Configuring</span>
+            <a id="foundry-link" class="ghost-link" href="https://ai.azure.com" target="_blank" rel="noreferrer">Open Foundry</a>
+          </div>
         </header>
 
-        <div id="prompt-strip" class="prompt-strip" aria-label="Prompt examples"></div>
+        <nav id="activity-nav" class="activity-nav" aria-label="Activity parts"></nav>
 
-        <section id="messages" class="messages" aria-live="polite"></section>
+        <section class="activity-stage" aria-label="Current activity">
+          <div class="activity-copy">
+            <p id="activity-kicker" class="eyebrow">Part 1</p>
+            <h2 id="activity-title">Loading activity</h2>
+            <p id="activity-summary"></p>
+          </div>
+          <div class="activity-progress">
+            <span id="activity-progress">0 of 0</span>
+            <button id="mark-part-complete" class="secondary-button" type="button">Mark complete</button>
+          </div>
+          <div id="activity-tasks" class="activity-tasks"></div>
+        </section>
 
-        <form id="chat-form" class="composer">
-          <textarea id="prompt-input" rows="3" placeholder="Ask a workshop question"></textarea>
-          <button id="send-button" type="submit">Send</button>
-        </form>
+        <section class="chat-workspace" aria-label="Chat workspace">
+          <div id="prompt-strip" class="prompt-strip" aria-label="Prompt examples"></div>
+
+          <section id="messages" class="messages" aria-live="polite"></section>
+
+          <form id="chat-form" class="composer">
+            <textarea id="prompt-input" rows="3" placeholder="Ask a workshop question"></textarea>
+            <button id="send-button" type="submit">Send</button>
+          </form>
+        </section>
       </main>
 
-      <aside class="source-panel" aria-label="Sources">
+      <aside class="review-panel" aria-label="Sources and notes">
         <section class="panel-section">
           <div class="section-title">
             <h2>Sources</h2>
@@ -92,27 +142,15 @@
 
         <section class="panel-section">
           <div class="section-title">
-            <h2>Activity</h2>
-            <span>Live</span>
+            <h2>Run Settings</h2>
+            <span id="usage-summary">Ready</span>
           </div>
-          <div class="activity-list">
-            <button class="activity-card" type="button" data-prompt="Can you tell me about innovative drinking water treatment technologies?">
-              <strong>General response</strong>
-              <span>Broad technical prompt</span>
-            </button>
-            <button class="activity-card" type="button" data-prompt="Explain drinking water treatment for a first-grade audience.">
-              <strong>Audience shift</strong>
-              <span>Reading-level control</span>
-            </button>
-            <button class="activity-card" type="button" data-prompt="Use the documents. In 5 bullets or fewer, name drinking-water-related capital improvement project categories in Fort Worth. Keep each bullet under 20 words.">
-              <strong>Grounded answer</strong>
-              <span>CIP document search</span>
-            </button>
-            <button class="activity-card" type="button" data-prompt="In two sentences, what changed after adding instructions or retrieved documents to the answer?">
-              <strong>Share-out</strong>
-              <span>Compare learning</span>
-            </button>
-          </div>
+          <div id="settings-summary" class="settings-summary"></div>
+        </section>
+
+        <section class="panel-section">
+          <label for="observation-notes">Observations</label>
+          <textarea id="observation-notes" rows="8" placeholder="Write quick comparison notes during the lab"></textarea>
         </section>
       </aside>
     </div>

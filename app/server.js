@@ -1,18 +1,24 @@
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { promisify } from "node:util";
 
+loadLocalEnv();
+
 const execFileAsync = promisify(execFile);
 const publicRoot = join(process.cwd(), "public");
 const tokenCache = new Map();
+const rateLimitBuckets = new Map();
 
 const settings = {
   port: Number(process.env.PORT || 5050),
+  nodeEnv: process.env.NODE_ENV || "development",
   workshopName: process.env.WORKSHOP_NAME || "ACE26 GenAI Workshop",
   aiEndpoint: trimTrailingSlash(process.env.AZURE_AI_SERVICES_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT || ""),
   chatDeployment: process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || process.env.CHAT_DEPLOYMENT_NAME || "",
+  chatDeployments: parseList(process.env.AZURE_OPENAI_CHAT_DEPLOYMENTS || process.env.CHAT_DEPLOYMENT_NAMES || ""),
   openAiApiVersion: process.env.AZURE_OPENAI_API_VERSION || "v1",
   openAiTokenScope:
     process.env.AZURE_OPENAI_TOKEN_SCOPE ||
@@ -22,11 +28,20 @@ const settings = {
   openAiApiKey: process.env.AZURE_OPENAI_API_KEY || "",
   searchEndpoint: trimTrailingSlash(process.env.AZURE_SEARCH_ENDPOINT || ""),
   searchIndex: process.env.AZURE_SEARCH_INDEX || "documents",
+  searchIndexes: parseList(process.env.AZURE_SEARCH_INDEXES || ""),
   searchApiVersion: process.env.AZURE_SEARCH_API_VERSION || "2024-07-01",
   searchApiKey: process.env.AZURE_SEARCH_API_KEY || "",
   foundryPortalUrl: process.env.AI_FOUNDRY_PORTAL_URL || "https://ai.azure.com",
-  storageContainer: process.env.AZURE_STORAGE_CONTAINER || "workshop-docs"
+  storageContainer: process.env.AZURE_STORAGE_CONTAINER || "workshop-docs",
+  apiAccessMode: normalizeApiAccessMode(process.env.PUBLIC_API_ACCESS_MODE),
+  workshopAccessCodes: parseList(process.env.WORKSHOP_ACCESS_CODES || process.env.WORKSHOP_ACCESS_CODE || ""),
+  apiRateLimitPerMinute: Number(process.env.PUBLIC_API_RATE_LIMIT_PER_MINUTE || process.env.PUBLIC_CHAT_RATE_LIMIT_PER_MINUTE || 120),
+  allowProductionApiKeys: process.env.ALLOW_PRODUCTION_API_KEYS === "true"
 };
+
+settings.modelOptions = buildModelOptions(settings.chatDeployments, settings.chatDeployment);
+settings.defaultChatDeployment = settings.chatDeployment || settings.modelOptions[0]?.id || "";
+settings.dataSources = buildDataSources(settings.searchIndexes, settings.searchIndex);
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -42,7 +57,7 @@ const samplePrompts = [
   "How does drinking water treatment work?",
   "Explain drinking water treatment in three bullet points.",
   "Use the documents. Answer in one short sentence: what is WTP Minor Improvements? Cite the file.",
-  "Use the documents. Return only a markdown table with exactly 2 rows and 2 columns: category and description. Rows: WTP Minor Improvements; Major Mains Bucket. Keep descriptions under 10 words."
+  "Only answer questions related to water, wastewater, environmental engineering, public infrastructure, or the provided documents."
 ];
 
 const defaultInstructions =
@@ -61,12 +76,16 @@ createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/search") {
+      enforceApiAccess(req);
+      enforceApiRateLimit(req, "search");
       const body = await readJson(req);
-      const result = await searchDocuments(body.query, body.top);
+      const result = await searchDocuments(body.query, body.top, body.dataSourceId || settings.dataSources[0]?.id);
       return sendJson(res, 200, result);
     }
 
     if (req.method === "POST" && url.pathname === "/api/chat") {
+      enforceApiAccess(req);
+      enforceApiRateLimit(req, "chat");
       const body = await readJson(req);
       const result = await chat(body);
       return sendJson(res, 200, result);
@@ -90,12 +109,13 @@ createServer(async (req, res) => {
 
 async function chat(body) {
   requireConfigured(settings.aiEndpoint, "AZURE_AI_SERVICES_ENDPOINT");
-  requireConfigured(settings.chatDeployment, "AZURE_OPENAI_CHAT_DEPLOYMENT");
+  const deployment = resolveDeployment(body.modelDeployment || body.deployment || body.model);
+  requireConfigured(deployment, "AZURE_OPENAI_CHAT_DEPLOYMENT");
 
   const messages = normalizeMessages(body.messages);
   const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content || "";
-  const useGrounding = Boolean(body.useGrounding);
-  const sources = useGrounding ? (await searchDocuments(lastUserMessage, body.top)).documents : [];
+  const dataSource = resolveDataSource(body.dataSourceId || (body.useGrounding ? settings.dataSources[0]?.id : "none"));
+  const sources = dataSource ? (await searchDocuments(lastUserMessage, body.top, dataSource.id)).documents : [];
   const systemPrompt = buildSystemPrompt(body.systemPrompt, sources);
   const payload = {
     messages: [{ role: "system", content: systemPrompt }, ...messages],
@@ -104,7 +124,7 @@ async function chat(body) {
   };
 
   if (settings.openAiApiVersion === "v1") {
-    payload.model = settings.chatDeployment;
+    payload.model = deployment;
   }
 
   const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort);
@@ -112,7 +132,7 @@ async function chat(body) {
     payload.reasoning_effort = reasoningEffort;
   }
 
-  const response = await fetch(openAiUrl(), {
+  const response = await fetch(openAiUrl(deployment), {
     method: "POST",
     headers: await openAiHeaders(),
     body: JSON.stringify(payload)
@@ -131,12 +151,15 @@ async function chat(body) {
     },
     sources,
     usage: responseBody.usage || null,
-    model: responseBody.model || settings.chatDeployment
+    model: responseBody.model || deployment,
+    deployment,
+    dataSource: dataSource || null
   };
 }
 
-async function searchDocuments(query, requestedTop) {
-  if (!settings.searchEndpoint || !settings.searchIndex) {
+async function searchDocuments(query, requestedTop, dataSourceId) {
+  const dataSource = resolveDataSource(dataSourceId);
+  if (!dataSource || !settings.searchEndpoint || !dataSource.indexName) {
     return {
       enabled: false,
       documents: [],
@@ -146,7 +169,7 @@ async function searchDocuments(query, requestedTop) {
 
   const top = clampInteger(requestedTop, 1, 8, 4);
   const searchUrl = `${settings.searchEndpoint}/indexes/${encodeURIComponent(
-    settings.searchIndex
+    dataSource.indexName
   )}/docs/search?api-version=${encodeURIComponent(settings.searchApiVersion)}`;
   const response = await fetch(searchUrl, {
     method: "POST",
@@ -214,14 +237,31 @@ function normalizeMessages(messages) {
 function getClientConfig() {
   return {
     workshopName: settings.workshopName,
-    chatDeployment: settings.chatDeployment,
+    chatDeployment: settings.defaultChatDeployment,
+    defaultModelId: settings.defaultChatDeployment,
+    models: settings.modelOptions,
     searchIndex: settings.searchIndex,
+    defaultDataSourceId: settings.dataSources[0]?.id || "none",
+    dataSources: [
+      {
+        id: "none",
+        name: "No grounding",
+        type: "none",
+        enabled: true,
+        description: "General model response without retrieved workshop snippets."
+      },
+      ...settings.dataSources
+    ],
     storageContainer: settings.storageContainer,
     foundryPortalUrl: settings.foundryPortalUrl,
     defaultInstructions,
     samplePrompts,
+    access: {
+      mode: settings.apiAccessMode,
+      codeRequired: settings.apiAccessMode === "code"
+    },
     configured: {
-      chat: Boolean(settings.aiEndpoint && settings.chatDeployment),
+      chat: Boolean(settings.aiEndpoint && settings.defaultChatDeployment),
       search: Boolean(settings.searchEndpoint && settings.searchIndex)
     }
   };
@@ -239,6 +279,7 @@ async function serveStatic(pathname, res) {
   try {
     const content = await readFile(filePath);
     res.writeHead(200, {
+      ...securityHeaders(),
       "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream",
       "Cache-Control": extname(filePath) === ".html" ? "no-store" : "public, max-age=300"
     });
@@ -251,6 +292,7 @@ async function serveStatic(pathname, res) {
 async function openAiHeaders() {
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (settings.openAiApiKey) {
+    ensureApiKeyAllowed("AZURE_OPENAI_API_KEY");
     headers["api-key"] = settings.openAiApiKey;
   } else {
     headers.Authorization = `Bearer ${await getAccessToken(settings.openAiTokenScope)}`;
@@ -261,6 +303,7 @@ async function openAiHeaders() {
 async function searchHeaders() {
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (settings.searchApiKey) {
+    ensureApiKeyAllowed("AZURE_SEARCH_API_KEY");
     headers["api-key"] = settings.searchApiKey;
   } else {
     headers.Authorization = `Bearer ${await getAccessToken("https://search.azure.com/.default")}`;
@@ -303,14 +346,17 @@ async function getManagedIdentityToken(resource) {
 
 async function getAzureCliToken(resource) {
   try {
-    const { stdout } = await execFileAsync("az", [
+    const azArgs = [
       "account",
       "get-access-token",
       "--resource",
       resource,
       "--output",
       "json"
-    ]);
+    ];
+    const executable = process.platform === "win32" ? "cmd.exe" : "az";
+    const args = process.platform === "win32" ? ["/d", "/s", "/c", "az", ...azArgs] : azArgs;
+    const { stdout } = await execFileAsync(executable, args);
     const body = JSON.parse(stdout);
     return {
       token: body.accessToken,
@@ -324,13 +370,13 @@ async function getAzureCliToken(resource) {
   }
 }
 
-function openAiUrl() {
+function openAiUrl(deployment) {
   if (settings.openAiApiVersion === "v1") {
     return `${settings.aiEndpoint}/openai/v1/chat/completions`;
   }
 
   return `${settings.aiEndpoint}/openai/deployments/${encodeURIComponent(
-    settings.chatDeployment
+    deployment
   )}/chat/completions?api-version=${encodeURIComponent(settings.openAiApiVersion)}`;
 }
 
@@ -372,10 +418,23 @@ async function readJson(req) {
 
 function sendJson(res, status, body) {
   res.writeHead(status, {
+    ...securityHeaders(),
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
   });
   res.end(JSON.stringify(body));
+}
+
+function securityHeaders() {
+  return {
+    "Content-Security-Policy":
+      "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff"
+  };
 }
 
 function serviceError(response, body, fallbackMessage) {
@@ -393,8 +452,178 @@ function requireConfigured(value, name) {
   }
 }
 
+function enforceApiAccess(req) {
+  if (settings.apiAccessMode === "open") {
+    return;
+  }
+
+  if (settings.apiAccessMode === "app-service-auth") {
+    if (req.headers["x-ms-client-principal"]) {
+      return;
+    }
+
+    const error = new Error("This workshop app requires App Service Authentication.");
+    error.statusCode = 401;
+    error.publicMessage = "Sign in to access the workshop app.";
+    throw error;
+  }
+
+  if (!settings.workshopAccessCodes.length) {
+    const error = new Error("WORKSHOP_ACCESS_CODE or WORKSHOP_ACCESS_CODES is required when PUBLIC_API_ACCESS_MODE=code.");
+    error.statusCode = 503;
+    error.publicMessage = "Workshop access is not configured.";
+    throw error;
+  }
+
+  const providedCode = String(req.headers["x-workshop-access-code"] || "").trim();
+  if (providedCode && settings.workshopAccessCodes.includes(providedCode)) {
+    return;
+  }
+
+  const error = new Error("A valid workshop access code is required.");
+  error.statusCode = 401;
+  error.publicMessage = "Enter the workshop access code before sending requests.";
+  throw error;
+}
+
+function enforceApiRateLimit(req, routeName) {
+  if (!settings.apiRateLimitPerMinute || settings.apiRateLimitPerMinute < 1) {
+    return;
+  }
+
+  const windowMs = 60 * 1000;
+  const now = Date.now();
+  const key = `${routeName}:${clientAddress(req)}`;
+  const bucket = (rateLimitBuckets.get(key) || []).filter((timestamp) => now - timestamp < windowMs);
+
+  if (bucket.length >= settings.apiRateLimitPerMinute) {
+    const error = new Error("Too many API requests. Wait a minute and try again.");
+    error.statusCode = 429;
+    error.publicMessage = "Too many API requests. Wait a minute and try again.";
+    throw error;
+  }
+
+  bucket.push(now);
+  rateLimitBuckets.set(key, bucket);
+}
+
+function clientAddress(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return forwarded || req.socket?.remoteAddress || "unknown";
+}
+
+function ensureApiKeyAllowed(settingName) {
+  if (settings.nodeEnv === "production" && !settings.allowProductionApiKeys) {
+    const error = new Error(`${settingName} is not allowed in production unless ALLOW_PRODUCTION_API_KEYS=true.`);
+    error.statusCode = 503;
+    error.publicMessage = "The app is configured for keyless production auth, but managed identity auth is unavailable.";
+    throw error;
+  }
+}
+
 function trimTrailingSlash(value) {
   return value.replace(/\/+$/, "");
+}
+
+function parseList(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeApiAccessMode(value) {
+  const requested = String(value || "").trim().toLowerCase();
+  if (["open", "code", "app-service-auth"].includes(requested)) {
+    return requested;
+  }
+  return process.env.NODE_ENV === "production" ? "code" : "open";
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function buildModelOptions(configuredDeployments, fallbackDeployment) {
+  const names = unique([...configuredDeployments, fallbackDeployment]);
+  return names.map((name) => ({
+    id: name,
+    name,
+    label: name,
+    description: inferModelDescription(name),
+    recommendedFor: inferModelPurpose(name),
+    isDefault: name === (fallbackDeployment || names[0])
+  }));
+}
+
+function inferModelDescription(name) {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("nano")) {
+    return "Fast warmup model for simple prompts.";
+  }
+  if (normalized.includes("mini")) {
+    return "Balanced model for prompt iteration and structured outputs.";
+  }
+  if (normalized.includes("pro")) {
+    return "Higher-capacity model for grounded or more demanding answers.";
+  }
+  return "Configured Azure AI model deployment.";
+}
+
+function inferModelPurpose(name) {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("nano")) {
+    return "Warmup";
+  }
+  if (normalized.includes("mini")) {
+    return "Prompt lab";
+  }
+  if (normalized.includes("pro")) {
+    return "Grounded answers";
+  }
+  return "Workshop";
+}
+
+function buildDataSources(configuredIndexes, fallbackIndex) {
+  return unique([...configuredIndexes, fallbackIndex]).map((indexName) => ({
+    id: `search:${indexName}`,
+    name: indexName === "documents" ? "Workshop documents" : indexName,
+    type: "azure-search",
+    indexName,
+    enabled: Boolean(settings.searchEndpoint && indexName),
+    description: `Azure AI Search index: ${indexName}`
+  }));
+}
+
+function resolveDeployment(requestedDeployment) {
+  const requested = String(requestedDeployment || settings.defaultChatDeployment || "").trim();
+  const allowed = settings.modelOptions.map((model) => model.id);
+  if (!requested) {
+    return settings.defaultChatDeployment;
+  }
+  if (!allowed.length || allowed.includes(requested)) {
+    return requested;
+  }
+
+  const error = new Error(`Model deployment "${requested}" is not configured for this playground.`);
+  error.statusCode = 400;
+  throw error;
+}
+
+function resolveDataSource(dataSourceId) {
+  const requested = String(dataSourceId || "none").trim();
+  if (!requested || requested === "none") {
+    return null;
+  }
+
+  const source = settings.dataSources.find((candidate) => candidate.id === requested || candidate.indexName === requested);
+  if (source) {
+    return source;
+  }
+
+  const error = new Error(`Data source "${requested}" is not configured for this playground.`);
+  error.statusCode = 400;
+  throw error;
 }
 
 function trimText(value, maxLength) {
@@ -412,4 +641,33 @@ function clampInteger(value, min, max, fallback) {
 
 function normalizeReasoningEffort(value) {
   return ["minimal", "low", "medium", "high"].includes(value) ? value : "";
+}
+
+function loadLocalEnv() {
+  const envPath = join(process.cwd(), "..", ".env");
+  const appEnvPath = join(process.cwd(), ".env");
+  for (const filePath of [envPath, appEnvPath]) {
+    if (!existsSync(filePath)) {
+      continue;
+    }
+
+    const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) {
+        continue;
+      }
+
+      const equalsIndex = trimmed.indexOf("=");
+      if (equalsIndex < 1) {
+        continue;
+      }
+
+      const key = trimmed.slice(0, equalsIndex).trim();
+      const value = trimmed.slice(equalsIndex + 1).trim().replace(/^['"]|['"]$/g, "");
+      if (!(key in process.env)) {
+        process.env[key] = value;
+      }
+    }
+  }
 }
