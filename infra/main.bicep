@@ -298,12 +298,18 @@ module webApp 'modules/webApp.bicep' = {
     location: location
     skuName: appServicePlanSku
     appSettings: {
+      WORKSHOP_NAME: workshopName
       AZURE_AI_SERVICES_ENDPOINT: aiServices.outputs.endpoint
       AZURE_OPENAI_CHAT_DEPLOYMENT: chatDeploymentName
       AZURE_OPENAI_EMBEDDING_DEPLOYMENT: embeddingDeploymentName
+      AZURE_OPENAI_API_VERSION: 'v1'
       AZURE_SEARCH_ENDPOINT: search.outputs.searchEndpoint
       AZURE_SEARCH_INDEX: searchIndexName
+      AZURE_SEARCH_API_VERSION: '2024-07-01'
       AZURE_STORAGE_CONTAINER: documentContainerName
+      AI_FOUNDRY_PORTAL_URL: 'https://ai.azure.com'
+      SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
+      WEBSITE_NODE_DEFAULT_VERSION: '~20'
     }
     tags: tags
   }
@@ -320,6 +326,9 @@ module roleAssignments 'modules/roleAssignments.bicep' = if (enableRoleAssignmen
     aiServicesProjectName: aiServices.outputs.projectName
     foundryPrincipalIds: [
       aiServices.outputs.projectPrincipalId
+    ]
+    applicationPrincipalIds: [
+      webApp.outputs.webAppPrincipalId
     ]
     searchPrincipalId: search.outputs.searchManagedIdentityPrincipalId
     participantPrincipalIds: participantPrincipalIds

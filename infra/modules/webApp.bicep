@@ -45,6 +45,7 @@ resource app 'Microsoft.Web/sites@2023-12-01' = if (createWebApp) {
     siteConfig: {
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
+      appCommandLine: 'node server.js'
       appSettings: [for settingName in items(appSettings): {
         name: settingName.key
         value: string(settingName.value)
