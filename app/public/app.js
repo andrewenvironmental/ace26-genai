@@ -7,6 +7,8 @@ const instructionPresets = {
     "Only answer questions related to water, wastewater, environmental engineering, public infrastructure, or the provided documents. If a question is outside this scope, briefly explain that the workshop assistant is focused on water and environmental topics."
 };
 
+const workshopDisplayName = "ACE26 AI Pre-conference Workshop";
+
 const activities = [
   {
     id: "intro",
@@ -44,7 +46,7 @@ const activities = [
     kicker: "Part 1",
     title: "Use the Workshop Playground",
     summary: "Send a baseline prompt, then use instructions and prompt constraints to shape the answer.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "medium", maxTokens: 900 },
+    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 900 },
     tasks: [
       {
         title: "1a. Configure the warmup",
@@ -117,7 +119,7 @@ const activities = [
     kicker: "Part 2",
     title: "Adjust Model Settings",
     summary: "Change response budget and reasoning effort, then compare speed, detail, and usefulness.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "medium", maxTokens: 800 },
+    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 800 },
     tasks: [
       {
         title: "2a. Set a response budget",
@@ -127,7 +129,7 @@ const activities = [
             label: "Configure 800-token setup",
             modelHint: "mini",
             maxTokens: 800,
-            reasoningEffort: "medium",
+            reasoningEffort: "minimal",
             prompt: "Explain coagulation and flocculation."
           }
         ]
@@ -143,18 +145,20 @@ const activities = [
         ]
       },
       {
-        title: "2c. Compare reasoning effort",
-        detail: "Run the same filtration question with medium and high reasoning effort. Compare the outputs side by side before deciding whether the higher setting helped.",
+        title: "2c. Compare reasoning settings",
+        detail: "Run the same filtration question with minimal reasoning and the model default. Compare the outputs side by side before deciding whether the setting mattered.",
         comparison: true,
         actions: [
           {
-            label: "Medium reasoning",
-            reasoningEffort: "medium",
+            label: "Minimal reasoning",
+            modelHint: "mini",
+            reasoningEffort: "minimal",
             prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
           },
           {
-            label: "High reasoning",
-            reasoningEffort: "high",
+            label: "Default reasoning",
+            modelHint: "mini",
+            reasoningEffort: "",
             prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
           }
         ]
@@ -166,25 +170,26 @@ const activities = [
     kicker: "Part 3",
     title: "Knowledge Limits",
     summary: "Ask questions that need current or organization-specific verification.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "medium", maxTokens: 900 },
+    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 900 },
     tasks: [
       {
-        title: "3a. Test a recent public fact",
-        detail: "Run the Super Bowl prompt, then verify against a trusted sports source. The point is whether the model dates its answer, admits uncertainty, or guesses.",
+        title: "3a. Test a not-yet-knowable fact",
+        detail: "Run the future sports prompt, then check whether the model refuses, gives a caveat, or guesses anyway.",
         actions: [
           {
-            label: "Use sports fact check",
-            prompt: "As of April 2026, who won Super Bowl LX and what was the final score?"
+            label: "Use future sports check",
+            prompt: "As of June 2026, who won the 2026 World Series and what was the final score?"
           }
         ]
       },
       {
-        title: "3b. Test a current water rule",
-        detail: "Run the PFAS prompt, then verify with EPA or another official source. Look for confusion between the final rule and later implementation updates.",
+        title: "3b. Plan verification for a current water rule",
+        detail: "Run the PFAS verification prompt. The goal is to identify official sources and change points, not to accept an uncited status answer.",
         actions: [
           {
-            label: "Use PFAS status check",
-            prompt: "As of April 2026, what is the current status of EPA's national drinking water rule for PFAS?"
+            label: "Use PFAS verification prompt",
+            prompt:
+              "Without using web access or provided documents, do not give a final status answer. As of April 2026, what official sources would you check to verify the current status of EPA's national drinking water rule for PFAS, and what details might have changed after the 2024 final rule?"
           }
         ]
       },
@@ -219,7 +224,7 @@ const activities = [
     kicker: "Part 4",
     title: "Ground Responses With Documents",
     summary: "Attach the workshop document index and inspect the retrieved snippets behind the answer.",
-    settings: { modelHint: "mini", dataSourceHint: "documents", reasoningEffort: "medium", maxTokens: 1100, sourceTop: 4 },
+    settings: { modelHint: "mini", dataSourceHint: "documents", reasoningEffort: "minimal", maxTokens: 1100, sourceTop: 4 },
     tasks: [
       {
         title: "4a. Attach documents for a focused question",
@@ -267,7 +272,7 @@ const activities = [
     kicker: "Part 5",
     title: "Safety And Guardrails",
     summary: "Use instructions to constrain scope, then test whether the assistant stays inside it.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "medium", maxTokens: 700 },
+    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 700 },
     tasks: [
       {
         title: "5a. Apply a scope guardrail",
@@ -298,7 +303,7 @@ const activities = [
     kicker: "Wrap Up",
     title: "Compare And Discuss",
     summary: "Capture what changed when you adjusted instructions, model settings, and document grounding.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "medium", maxTokens: 700 },
+    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 700 },
     tasks: [
       {
         title: "6a. Compare what changed",
@@ -375,23 +380,23 @@ const stepReflections = {
       "The prompt now directly tells the model to answer in two sentences. Prompt-level constraints are often easier to observe than token settings.",
     questions: ["Did the answer follow the sentence limit?", "Was it still useful for the intended reader?"]
   },
-  "2c. Compare reasoning effort": {
+  "2c. Compare reasoning settings": {
     title: "What changed",
     body:
-      "Both runs used the same prompt and model, but changed reasoning effort. If the answers are similar, higher reasoning may not be worth the extra latency for this simple question.",
-    questions: ["Which answer is clearer or more complete?", "Did high reasoning add enough value to justify using it?"]
+      "Both runs used the same prompt and model, but changed the reasoning setting. If the answers are similar, the extra setting may not matter for this simple question.",
+    questions: ["Which answer is clearer or more complete?", "Did the default setting add enough value to use it for similar prompts?"]
   },
-  "3a. Test a recent public fact": {
+  "3a. Test a not-yet-knowable fact": {
     title: "What happened",
     body:
-      "Recent facts are a stress test for model knowledge. A confident answer is not the same thing as a verified answer.",
-    questions: ["Did the model give a date or caveat?", "Which trusted source would you check?"]
+      "A future or not-yet-knowable fact is a clean test of whether the model will admit uncertainty or fabricate a confident answer.",
+    questions: ["Did the model clearly say the event had not happened yet?", "What would make a guessed answer risky?"]
   },
-  "3b. Test a current water rule": {
+  "3b. Plan verification for a current water rule": {
     title: "What happened",
     body:
-      "Regulatory status can change over time. For technical work, current official sources matter more than fluent wording.",
-    questions: ["Did the answer distinguish final rules from later updates?", "What official source would you cite?"]
+      "Regulatory status can change over time. In this step, the better answer is a verification plan that names official sources and specific details to confirm.",
+    questions: ["Did the model avoid giving an uncited final status?", "Which EPA, Federal Register, or court source would you check first?"]
   },
   "3c. Check local specificity": {
     title: "What happened",
@@ -530,7 +535,8 @@ async function init() {
     const config = await apiGet("/api/config");
     state.config = config;
     instructionPresets.default = config.defaultInstructions || instructionPresets.default;
-    elements.appTitle.textContent = config.workshopName || "ACE26 GenAI Workshop";
+    elements.appTitle.textContent = workshopDisplayName;
+    document.title = workshopDisplayName;
     elements.instructions.value = instructionPresets.default;
     configureAccessGate(config.access);
 
@@ -712,16 +718,16 @@ async function sendPrompt(prompt, taskRef = null) {
   }
 }
 
-async function requestChat(prompt) {
+async function requestChat(prompt, settings = null, options = {}) {
   return apiPost("/api/chat", {
     messages: [{ role: "user", content: prompt }],
     systemPrompt: elements.instructions.value,
-    modelDeployment: elements.modelSelect.value,
-    reasoningEffort: elements.reasoningEffort.value,
-    maxCompletionTokens: Number(elements.maxTokens.value),
-    dataSourceId: elements.dataSourceSelect.value,
-    top: Number(elements.sourceTop.value)
-  });
+    modelDeployment: modelIdFromSettings(settings) || elements.modelSelect.value,
+    reasoningEffort: settings?.reasoningEffort ?? elements.reasoningEffort.value,
+    maxCompletionTokens: Number(settings?.maxTokens || elements.maxTokens.value),
+    dataSourceId: dataSourceIdFromSettings(settings) || elements.dataSourceSelect.value,
+    top: Number(settings?.sourceTop || elements.sourceTop.value)
+  }, options);
 }
 
 async function runComparisonPrompt(activity, task, taskIndex, prompt) {
@@ -741,36 +747,44 @@ async function runComparisonPrompt(activity, task, taskIndex, prompt) {
   renderActivity();
 
   try {
-    for (const [index, action] of task.actions.entries()) {
-      applyAction(action, { keepPrompt: true });
-      updateComparisonVariant(key, index, { pending: true });
-      try {
-        const response = await requestChat(prompt);
-        updateComparisonVariant(key, index, {
-          pending: false,
-          response: response.message.content || "No response content returned.",
-          sources: response.sources || [],
-          usage: response.usage || null
-        });
-        applyEffectiveReasoning(response.reasoningEffort);
-        state.latestSources = response.sources || [];
-        renderSources();
-        renderUsage(response);
-      } catch (error) {
-        updateComparisonVariant(key, index, {
-          pending: false,
-          error: error.message || "Request failed."
-        });
-        elements.usageSummary.textContent = "Failed";
-      }
+    const results = await Promise.all(
+      task.actions.map((action, index) => runComparisonVariant(activity, action, key, index, prompt))
+    );
+    const lastSuccessful = [...results].reverse().find((result) => result?.sources);
+    state.latestSources = lastSuccessful?.sources || [];
+    renderSources();
+    if (!lastSuccessful) {
+      elements.usageSummary.textContent = "Comparison complete";
     }
-
     state.cellOutputs[key].pending = false;
     state.pendingTask = null;
     markTask(activity.id, taskIndex, true);
   } finally {
     setBusy(false);
     renderActivity();
+  }
+}
+
+async function runComparisonVariant(activity, action, key, variantIndex, prompt) {
+  const settings = { ...(activity.settings || {}), ...action };
+  updateComparisonVariant(key, variantIndex, { pending: true });
+
+  try {
+    const response = await requestChat(prompt, settings, { timeoutMs: 90000 });
+    updateComparisonVariant(key, variantIndex, {
+      pending: false,
+      response: response.message.content || "No response content returned.",
+      sources: response.sources || [],
+      usage: response.usage || null
+    });
+    renderUsage(response);
+    return response;
+  } catch (error) {
+    updateComparisonVariant(key, variantIndex, {
+      pending: false,
+      error: error.message || "Request failed."
+    });
+    return null;
   }
 }
 
@@ -940,7 +954,7 @@ function renderActivity() {
             <span class="task-step">${taskIndex + 1}</span>
             <div class="task-copy">
               <div class="task-title-row">
-                <h3>${escapeHtml(task.title)}</h3>
+                <h3>${escapeHtml(displayTaskTitle(task.title))}</h3>
                 <span class="task-state">${escapeHtml(stateLabel)}</span>
               </div>
               <p>${escapeHtml(task.detail)}</p>
@@ -951,7 +965,7 @@ function renderActivity() {
           <label class="cell-prompt-label" for="cell-prompt-${escapeHtml(key)}">Prompt</label>
           <textarea id="cell-prompt-${escapeHtml(key)}" class="cell-prompt" data-cell-prompt="${escapeHtml(key)}" rows="3">${escapeHtml(prompt)}</textarea>
           <div class="cell-footer">
-            <span>${escapeHtml(currentRunCaption())}</span>
+            <span>${escapeHtml(task.comparison ? comparisonRunCaption(activity, task) : stepRunCaption(activity, task, preparedActionIndex))}</span>
             <button class="run-step-button" type="button" data-run-task="${taskIndex}"${state.busy ? " disabled" : ""}>${output?.pending ? "Running" : task.comparison ? "Run comparison" : "Run this step"}</button>
           </div>
           ${renderCellOutput(output, task)}
@@ -967,7 +981,7 @@ function renderInfoTask(task, taskIndex) {
       <div class="task-heading">
         <span class="task-step">${taskIndex + 1}</span>
         <div class="task-copy">
-          <h3>${escapeHtml(task.title)}</h3>
+          <h3>${escapeHtml(displayTaskTitle(task.title))}</h3>
           <p>${escapeHtml(task.detail)}</p>
         </div>
       </div>
@@ -994,6 +1008,10 @@ function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
       `;
     })
     .join("");
+}
+
+function displayTaskTitle(title) {
+  return String(title || "").replace(/^\d+[a-z]\.\s*/i, "");
 }
 
 function renderStepSetup(activity, task, preparedActionIndex) {
@@ -1198,6 +1216,26 @@ function currentRunCaption() {
   ].join(" / ");
 }
 
+function stepRunCaption(activity, task, preparedActionIndex) {
+  const action = task.actions[preparedActionIndex ?? 0] || {};
+  const settings = { ...(activity.settings || {}), ...action };
+  return [
+    modelLabelFromSettings(settings),
+    reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value),
+    dataSourceLabelFromSettings(settings)
+  ].join(" / ");
+}
+
+function comparisonRunCaption(activity, task) {
+  const labels = task.actions.map((action) => reasoningLabel(action.reasoningEffort)).join(" vs ");
+  const settings = { ...(activity.settings || {}), ...(task.actions[0] || {}) };
+  return [
+    modelLabelFromSettings(settings),
+    labels,
+    dataSourceLabelFromSettings(settings)
+  ].join(" / ");
+}
+
 function modelLabelFromSettings(settings) {
   if (settings.modelDeployment) {
     return settings.modelDeployment;
@@ -1209,6 +1247,22 @@ function modelLabelFromSettings(settings) {
   }
 
   return selectedModel()?.label || elements.modelSelect.value || "Default";
+}
+
+function modelIdFromSettings(settings) {
+  if (!settings) {
+    return "";
+  }
+
+  if (settings.modelDeployment) {
+    return settings.modelDeployment;
+  }
+
+  if (settings.modelHint) {
+    return modelByHint(settings.modelHint)?.id || "";
+  }
+
+  return "";
 }
 
 function dataSourceLabelFromSettings(settings) {
@@ -1227,6 +1281,22 @@ function dataSourceLabelFromSettings(settings) {
   }
 
   return selectedDataSource()?.name || "No grounding";
+}
+
+function dataSourceIdFromSettings(settings) {
+  if (!settings) {
+    return "";
+  }
+
+  if (settings.dataSourceId) {
+    return settings.dataSourceId;
+  }
+
+  if (settings.dataSourceHint) {
+    return dataSourceByHint(settings.dataSourceHint)?.id || "none";
+  }
+
+  return "";
 }
 
 function trimSource(source) {
@@ -1303,19 +1373,19 @@ function syncReasoningOptions(model = selectedModel()) {
   });
 
   if (!supported.has(elements.reasoningEffort.value)) {
-    elements.reasoningEffort.value = supported.has("medium") ? "medium" : "";
+    elements.reasoningEffort.value = supported.has("minimal") ? "minimal" : supported.has("medium") ? "medium" : "";
   }
 }
 
 function supportedReasoningEfforts(model) {
-  return isProModel(model) ? ["medium", "high", ""] : ["minimal", "low", "medium", "high", ""];
+  return isProModel(model) ? ["medium", "high", ""] : ["minimal", ""];
 }
 
 function reasoningSupportNote(model) {
   if (isProModel(model)) {
     return "Reasoning options: Medium or High.";
   }
-  return "Reasoning options: Minimal, Low, Medium, High.";
+  return "Reasoning options: Minimal or Default.";
 }
 
 function isProModel(model) {
@@ -1464,18 +1534,32 @@ async function apiGet(path) {
   return parseApiResponse(response);
 }
 
-async function apiPost(path, body) {
+async function apiPost(path, body, options = {}) {
   const headers = { "Content-Type": "application/json" };
   if (state.accessCode) {
     headers["X-Workshop-Access-Code"] = state.accessCode;
   }
 
-  const response = await fetch(path, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body)
-  });
-  return parseApiResponse(response);
+  const timeoutMs = options.timeoutMs || 120000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    return parseApiResponse(response);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Request timed out. Try a narrower prompt, fewer snippets, or a faster model.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function parseApiResponse(response) {

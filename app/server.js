@@ -15,7 +15,7 @@ const rateLimitBuckets = new Map();
 const settings = {
   port: Number(process.env.PORT || 5050),
   nodeEnv: process.env.NODE_ENV || "development",
-  workshopName: process.env.WORKSHOP_NAME || "ACE26 GenAI Workshop",
+  workshopName: process.env.WORKSHOP_NAME || "ACE26 AI Pre-conference Workshop",
   aiEndpoint: trimTrailingSlash(process.env.AZURE_AI_SERVICES_ENDPOINT || process.env.AZURE_OPENAI_ENDPOINT || ""),
   chatDeployment: process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || process.env.CHAT_DEPLOYMENT_NAME || "",
   chatDeployments: parseList(process.env.AZURE_OPENAI_CHAT_DEPLOYMENTS || process.env.CHAT_DEPLOYMENT_NAMES || ""),
@@ -118,7 +118,7 @@ async function chat(body) {
   const sources = dataSource ? (await searchDocuments(lastUserMessage, body.top, dataSource.id)).documents : [];
   const systemPrompt = buildSystemPrompt(body.systemPrompt, sources);
   const maxCompletionTokens = clampInteger(body.maxCompletionTokens, 100, 4096, 900);
-  const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort);
+  const reasoningEffort = normalizeChatReasoningEffort(deployment, body.reasoningEffort);
   const payload = {
     messages: [{ role: "system", content: systemPrompt }, ...messages],
     max_completion_tokens: maxCompletionTokens,
@@ -501,6 +501,20 @@ function normalizeResponsesReasoningEffort(deployment, value) {
 
   const supported = supportedResponsesReasoningEfforts(deployment);
   return supported.includes(requested) ? requested : supported[0] || "";
+}
+
+function normalizeChatReasoningEffort(deployment, value) {
+  const requested = normalizeReasoningEffort(value);
+  if (!requested) {
+    return "";
+  }
+
+  const normalized = String(deployment || "").toLowerCase();
+  if ((normalized.includes("mini") || normalized.includes("nano")) && requested !== "minimal") {
+    return "minimal";
+  }
+
+  return requested;
 }
 
 function supportedResponsesReasoningEfforts(deployment) {

@@ -2,8 +2,8 @@
 
 The participant guide uses these app screenshots:
 
-- `figure-01-lab-overview.png`: initial ACE26 AI Workshop Lab screen with settings, activity parts, and Part 1 steps.
-- `figure-02-step-prepared.png`: warmup step after `Configure warmup setup` is selected.
+- `figure-01-lab-overview.png`: initial ACE26 AI Pre-conference Workshop screen with the `Start Here` tab.
+- `figure-02-step-prepared.png`: Part 1 warmup step after `Configure warmup setup` is selected.
 - `figure-03-system-instructions.png`: system instructions drawer with the public education instructions applied.
 - `figure-04-model-settings.png`: Part 2 response-budget setup with model settings visible.
 - `figure-05-document-grounding.png`: Part 4 document-grounding setup with `Workshop documents` selected.

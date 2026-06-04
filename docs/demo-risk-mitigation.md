@@ -4,7 +4,7 @@ Issue #1 called for practical backup paths for the live workshop demo. The activ
 
 ## Primary Demo
 
-- Use the ACE26 AI Workshop Lab web app.
+- Use the ACE26 AI Pre-conference Workshop web app.
 - Follow `docs/activity-guide.md`.
 - Use the `Workshop documents` data source backed by the Fort Worth CIP source document.
 

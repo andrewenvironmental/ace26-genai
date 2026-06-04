@@ -1,4 +1,4 @@
-# ACE26 AI Workshop Lab
+# ACE26 AI Pre-conference Workshop
 
 This is the public-facing workshop web app for the ACE26 GenAI activity. It provides a simplified participant-safe lab interface: participants can move through the full activity, select configured model deployments, edit instructions, change reasoning and response length settings, attach a workshop data source, ask chat questions, and inspect retrieved source snippets.
 

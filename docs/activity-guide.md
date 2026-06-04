@@ -1,8 +1,8 @@
-# ACE26 AI Workshop Lab Hands-on Activity
+# ACE26 AI Pre-conference Workshop Hands-on Activity
 
 ## Background
 
-Large language models can be guided with instructions, model settings, and curated data so they are more useful for technical tasks in the water and environmental fields. In this activity, you will use the ACE26 AI Workshop Lab web app to experiment with prompts, model settings, document-grounded answers, and simple guardrails.
+Large language models can be guided with instructions, model settings, and curated data so they are more useful for technical tasks in the water and environmental fields. In this activity, you will use the ACE26 AI Pre-conference Workshop web app to experiment with prompts, model settings, document-grounded answers, and simple guardrails.
 
 This activity uses:
 
@@ -27,13 +27,13 @@ The required activity path uses `gpt-5.4-nano` and `gpt-5.4-mini`. If another mo
 1. Open the workshop app URL from your instructor.
 2. If prompted, enter the workshop access code.
 3. Confirm the app header shows the workshop name provided by your instructor.
-4. Start with Part 1. Each step will show the model settings it is about to use.
+4. Start on the `Start Here` tab. Each activity step will show the model settings it is about to use.
 
-![Figure 1 - ACE26 AI Workshop Lab overview](images/figure-01-lab-overview.png)
+![Figure 1 - ACE26 AI Pre-conference Workshop overview](images/figure-01-lab-overview.png)
 
 ## How to Read Each Step
 
-Each activity step has setup choices, a step setup summary, a prompt cell, and a `Run this step` button.
+Each activity step has setup choices, a step setup summary, a prompt cell, and a `Run this step` or `Run comparison` button.
 
 - Setup buttons such as `Configure warmup setup`, `Prepare broad prompt`, or `Apply guardrail setup` prepare the step. They may change the model deployment, system instructions, reasoning effort, token budget, grounding data source, and prompt text.
 - The step setup summary shows the model, reasoning effort, token budget, grounding source, retrieved snippet count, and instruction preset that will be used for that step.
@@ -47,6 +47,19 @@ Each activity step has setup choices, a step setup summary, a prompt cell, and a
 - `Manual run controls` is collapsed below the activity. Open it only if your instructor asks you to override the step setup.
 
 ![Figure 2 - Warmup step prepared with model and prompt](images/figure-02-step-prepared.png)
+
+## Start Here: How This Lab Works
+
+Before Part 1, read the `Start Here` tab. It explains the main things that change during the lab:
+
+- Model deployment
+- System instructions
+- User prompt
+- Reasoning effort
+- Response budget
+- Document grounding
+
+As you move through the activity, use the reflection cards after each run to decide what changed and whether the response became more useful, more verifiable, or just different.
 
 ## Activity Part 1: Use the Workshop Playground
 
@@ -137,9 +150,9 @@ Compare the two answers:
 
 ![Figure 4 - Model settings for Part 2 response budget](images/figure-04-model-settings.png)
 
-### 2c-2d. Compare Reasoning Effort
+### 2c. Compare Reasoning Settings
 
-Run `Configure medium reasoning` first, then run `Configure high reasoning` with the same prompt:
+Select `Run comparison`. The app will run the same prompt once with minimal reasoning and once with the model default:
 
 ```text
 What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?
@@ -147,33 +160,34 @@ What is the purpose of filtration at a wastewater treatment plant? How does this
 
 Compare:
 
-- Did changing reasoning effort change response speed?
+- Did changing the reasoning setting change response speed?
 - Did the answer become more concise or more detailed?
 - Which setting would you choose for factual technical work?
+- If the outputs are nearly identical, did the default setting add enough value to use it?
 
 ## Activity Part 3: Knowledge Limits and Unsupported Claims
 
 Large language models can produce responses that sound convincing but contain incorrect information. This is why AI-generated answers need verification against primary sources, especially for technical and regulatory work.
 
-### 3a. Test a Recent Public Fact
+### 3a. Test a Not-yet-knowable Fact
 
-Select `Use sports fact check`, run the prompt, then verify the answer against a trusted sports source:
-
-```text
-As of April 2026, who won Super Bowl LX and what was the final score?
-```
-
-The point is not the football answer. The point is whether the model gives a confident answer, admits uncertainty, or mixes up dates.
-
-### 3b. Test a Current Water Rule
-
-Select `Use PFAS status check`, run the prompt, then verify with EPA or another official source:
+Select `Use future sports check`, then run:
 
 ```text
-As of April 2026, what is the current status of EPA's national drinking water rule for PFAS?
+As of June 2026, who won the 2026 World Series and what was the final score?
 ```
 
-Look for whether the answer distinguishes the final rule from later implementation or legal updates.
+The event has not happened yet. The point is whether the model clearly refuses to guess, gives a caveat, or fabricates a confident answer.
+
+### 3b. Plan Verification for a Current Water Rule
+
+Select `Use PFAS verification prompt`, then run:
+
+```text
+Without using web access or provided documents, do not give a final status answer. As of April 2026, what official sources would you check to verify the current status of EPA's national drinking water rule for PFAS, and what details might have changed after the 2024 final rule?
+```
+
+Look for whether the answer names official verification sources, such as EPA pages, Federal Register notices, or court records, instead of presenting an uncited final status as fact.
 
 ### 3c-3d. Check Local Specificity
 

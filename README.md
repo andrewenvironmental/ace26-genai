@@ -1,6 +1,6 @@
-# ACE26 GenAI Workshop
+# ACE26 AI Pre-conference Workshop
 
-ACE workshop materials and demo guidance for the ACE26 GenAI workshop.
+ACE workshop materials and demo guidance for the ACE26 AI Pre-conference Workshop.
 
 ## Instructions for participants
 

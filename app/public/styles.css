@@ -857,7 +857,8 @@ th {
 .notebook-main > .part-list {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  overflow-x: auto;
 }
 
 .notebook-main > .part-list .part-button {
@@ -1130,7 +1131,7 @@ th {
   }
 
   .notebook-main > .part-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
   }
 
   .run-context-grid {
@@ -1165,8 +1166,7 @@ th {
     flex-direction: column;
   }
 
-  .settings-grid,
-  .notebook-main > .part-list {
+  .settings-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1227,7 +1227,7 @@ th {
   }
 
   .part-list {
-    grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
   }
 
   .message {

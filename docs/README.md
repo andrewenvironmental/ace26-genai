@@ -4,7 +4,7 @@ This directory contains public-safe workshop guidance for the ACE26 GenAI materi
 
 ## Current Workshop Path
 
-- `activity-guide.md`: participant-facing ACE26 AI Workshop Lab activity.
+- `activity-guide.md`: participant-facing ACE26 AI Pre-conference Workshop activity.
 - `playground-api-usage.md`: instructor/developer notes for how the workshop web app routes chat and search requests.
 - `deployment-azure-app-service.md`: GitHub Actions, OIDC, ACR, and App Service deployment runbook.
 - `azure-config-discovery.md`: safe commands for deriving real Azure and GitHub environment values.
