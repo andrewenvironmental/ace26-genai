@@ -458,7 +458,6 @@ activities.forEach((activity) => {
 });
 
 const state = {
-  messages: [],
   latestSources: [],
   busy: false,
   config: null,
@@ -526,7 +525,6 @@ async function init() {
   bindEvents();
   renderActivityNav();
   renderActivity();
-  renderMessages();
 
   try {
     const config = await apiGet("/api/config");
@@ -543,7 +541,8 @@ async function init() {
     renderActivityNav();
     renderActivity();
   } catch (error) {
-    addMessage("assistant", `Configuration failed: ${error.message}`);
+    elements.activityTitle.textContent = "Configuration failed";
+    elements.activitySummary.textContent = error.message;
   } finally {
     document.body.classList.remove("configuring");
   }
@@ -613,12 +612,10 @@ function bindEvents() {
   });
 
   elements.newChat.addEventListener("click", () => {
-    state.messages = [];
     state.latestSources = [];
     state.pendingTask = null;
     state.cellOutputs = {};
     state.preparedActions = {};
-    renderMessages();
     renderActivity();
     renderSources();
     elements.usageSummary.textContent = "Ready";
@@ -1238,34 +1235,6 @@ function trimSource(source) {
   return `${prefix}${String(source.content || "").slice(0, 240)}`;
 }
 
-function renderMessages() {
-  if (!elements.messages) {
-    return;
-  }
-
-  if (!state.messages.length) {
-    elements.messages.innerHTML = `
-      <div class="empty-chat">
-        <h3>No messages yet</h3>
-      </div>
-    `;
-    return;
-  }
-
-  elements.messages.innerHTML = state.messages
-    .map((message) => {
-      const classes = ["message", message.role, message.pending ? "pending" : ""].join(" ");
-      return `
-        <article class="${classes}">
-          <div class="message-label">${message.role === "user" ? "You" : "Assistant"}</div>
-          <div class="message-content">${formatMessage(message.content)}</div>
-        </article>
-      `;
-    })
-    .join("");
-  elements.messages.scrollTop = elements.messages.scrollHeight;
-}
-
 function renderSources() {
   elements.sourceCount.textContent = String(state.latestSources.length);
   if (!state.latestSources.length) {
@@ -1394,10 +1363,6 @@ function applyAction(action, options = {}) {
   if (action.instructionsPreset) {
     applyInstructionsPreset(action.instructionsPreset);
   }
-  if (action.prompt && !options.keepPrompt) {
-    elements.promptInput.value = action.prompt;
-    elements.promptInput.focus();
-  }
   updateModelHelp();
   updateDataSourceHelp();
   updateSettingsSummary();
@@ -1426,19 +1391,6 @@ function setSelectValue(select, value) {
   if (option) {
     select.value = value;
   }
-}
-
-function addMessage(role, content, pending = false) {
-  if (!elements.messages) {
-    return;
-  }
-
-  state.messages.push({ role, content, pending });
-  renderMessages();
-}
-
-function removePending() {
-  state.messages = state.messages.filter((message) => !message.pending);
 }
 
 function setBusy(isBusy) {
