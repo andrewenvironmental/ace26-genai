@@ -558,6 +558,12 @@ input[type="number"] {
   color: #fff;
 }
 
+.variation-chip {
+  background: var(--panel-soft);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
 .action-state {
   background: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
@@ -914,6 +920,10 @@ th {
   background: #f2faf6;
 }
 
+.task-item.info-task {
+  background: var(--panel);
+}
+
 .task-copy {
   min-width: 0;
   width: 100%;
@@ -968,6 +978,96 @@ th {
   font-weight: 700;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.comparison-settings {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.comparison-settings section,
+.comparison-result {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.comparison-settings section > strong {
+  color: var(--blue);
+  font-size: 0.82rem;
+}
+
+.comparison-settings .step-settings {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.comparison-settings .step-settings div,
+.comparison-result .step-settings div {
+  padding: 7px 8px;
+}
+
+.comparison-output {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.comparison-result.pending {
+  color: var(--muted);
+}
+
+.comparison-result-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.comparison-result-head strong {
+  color: var(--blue);
+}
+
+.comparison-result-head span,
+.pending-copy {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.reflection-card {
+  background: var(--panel-warm);
+  border: 1px solid #ecd4a8;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.reflection-card > strong {
+  color: var(--amber);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.reflection-card p {
+  color: #3f4744;
+  font-size: 0.9rem;
+  line-height: 1.42;
+  margin: 0;
+}
+
+.reflection-card ul {
+  color: #3f4744;
+  display: grid;
+  gap: 5px;
+  font-size: 0.88rem;
+  line-height: 1.38;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .cell-footer {
@@ -1107,6 +1207,11 @@ th {
 
   .step-settings {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparison-settings,
+  .comparison-output {
+    grid-template-columns: 1fr;
   }
 
   .step-settings div {

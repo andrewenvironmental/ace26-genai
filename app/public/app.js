@@ -326,6 +326,137 @@ const activities = [
   }
 ];
 
+const stepReflections = {
+  "1a. Configure the warmup": {
+    title: "What happened",
+    body:
+      "This run used the fast warmup model with a short prompt. It checks connectivity and gives everyone a low-stakes first response.",
+    questions: ["Was the answer short enough for the task?", "What would you need to add if this were for a real utility workflow?"]
+  },
+  "1b. Run a broad technical prompt": {
+    title: "What changed",
+    body:
+      "A broad prompt usually produces a broad answer. It may sound useful, but it often lacks source support, local context, and a clear audience.",
+    questions: ["Which claims would need verification?", "What audience or output format would make the answer more useful?"]
+  },
+  "1c. Apply public education instructions": {
+    title: "What changed",
+    body:
+      "System instructions changed the assistant's role, audience, tone, and reading level before the user prompt was sent.",
+    questions: ["Did the answer become easier for the public to read?", "Did simplifying the language remove any important technical nuance?"]
+  },
+  "1d. Ask for three bullets": {
+    title: "What changed",
+    body:
+      "The user prompt constrained the output format. Format constraints can make responses easier to scan, reuse, or review.",
+    questions: ["Did the bullets improve usability?", "Did the constraint hide anything important?"]
+  },
+  "1e. Draft a social post": {
+    title: "What changed",
+    body:
+      "The prompt changed the communication channel and tone. Public-facing text needs extra review for accuracy, claims, and policy fit.",
+    questions: ["Would you publish this as written?", "What claim would a communications or technical reviewer check first?"]
+  },
+  "1f. Change the audience level": {
+    title: "What changed",
+    body:
+      "The audience changed, so the model changed vocabulary and level of detail. Audience framing can be as important as the technical topic.",
+    questions: ["What became clearer?", "What became too simplified for a technical audience?"]
+  },
+  "2a. Set a response budget": {
+    title: "What changed",
+    body:
+      "Max completion tokens set the response budget. It can limit length and cost, but it does not tell the model what information matters most.",
+    questions: ["Was the answer complete enough?", "Would a direct length instruction work better than only changing token budget?"]
+  },
+  "2b. Add prompt-level brevity": {
+    title: "What changed",
+    body:
+      "The prompt now directly tells the model to answer in two sentences. Prompt-level constraints are often easier to observe than token settings.",
+    questions: ["Did the answer follow the sentence limit?", "Was it still useful for the intended reader?"]
+  },
+  "2c. Compare reasoning effort": {
+    title: "What changed",
+    body:
+      "Both runs used the same prompt and model, but changed reasoning effort. If the answers are similar, higher reasoning may not be worth the extra latency for this simple question.",
+    questions: ["Which answer is clearer or more complete?", "Did high reasoning add enough value to justify using it?"]
+  },
+  "3a. Test a recent public fact": {
+    title: "What happened",
+    body:
+      "Recent facts are a stress test for model knowledge. A confident answer is not the same thing as a verified answer.",
+    questions: ["Did the model give a date or caveat?", "Which trusted source would you check?"]
+  },
+  "3b. Test a current water rule": {
+    title: "What happened",
+    body:
+      "Regulatory status can change over time. For technical work, current official sources matter more than fluent wording.",
+    questions: ["Did the answer distinguish final rules from later updates?", "What official source would you cite?"]
+  },
+  "3c. Check local specificity": {
+    title: "What happened",
+    body:
+      "Local organization questions often produce plausible but generic answers unless the model has current, specific sources.",
+    questions: ["Which details sounded local and specific?", "Which ones need confirmation?"]
+  },
+  "3d. Check an agency-specific claim": {
+    title: "What happened",
+    body:
+      "Agency-specific answers should be treated as leads for research, not final facts, unless they are grounded in reliable sources.",
+    questions: ["What claim would be risky to reuse?", "Where would you verify it?"]
+  },
+  "4a. Attach documents for a focused question": {
+    title: "What changed",
+    body:
+      "This run added retrieved document snippets to the model context. Grounding can improve specificity, but the citations still need inspection.",
+    questions: ["Do the retrieved snippets support the answer?", "Is anything missing or inferred beyond the snippets?"]
+  },
+  "4b. Request a small table": {
+    title: "What changed",
+    body:
+      "The prompt combines document grounding with a strict structure. Tables are useful only if each cell can be traced back to support.",
+    questions: ["Are all cells populated and supported?", "Would you paste this into a spreadsheet without editing?"]
+  },
+  "4c. Try a broader grounded answer": {
+    title: "What changed",
+    body:
+      "Broader grounded prompts ask retrieval and summarization to do more work. They can be slower and may miss parts of a large document.",
+    questions: ["Was the answer complete enough?", "Would narrowing the question improve trust and speed?"]
+  },
+  "5a. Apply a scope guardrail": {
+    title: "What changed",
+    body:
+      "The system instructions now define an allowed scope. The off-topic prompt tests whether the assistant follows that boundary.",
+    questions: ["Did the assistant refuse briefly?", "Would this guardrail be strong enough for a public tool?"]
+  },
+  "5b. Confirm in-scope recovery": {
+    title: "What changed",
+    body:
+      "A useful guardrail should not make the assistant unhelpful. This run checks whether it can still answer an in-scope question.",
+    questions: ["Did the assistant recover gracefully?", "What policy should govern acceptable in-scope answers?"]
+  },
+  "6a. Compare what changed": {
+    title: "Discussion prompt",
+    body:
+      "This summary is a starting point for discussion. Your own observations from the runs are more important than the model's reflection.",
+    questions: ["Which change had the biggest effect?", "Which result would need the most human review?"]
+  },
+  "6b. Draft operational guardrails": {
+    title: "Discussion prompt",
+    body:
+      "Operational guardrails should be concrete enough for people to review, enforce, and improve over time.",
+    questions: ["Which guardrail is specific enough to implement?", "What approval or source-checking step is missing?"]
+  }
+};
+
+activities.forEach((activity) => {
+  activity.tasks.forEach((task) => {
+    if (stepReflections[task.title]) {
+      task.afterRun = stepReflections[task.title];
+    }
+  });
+});
+
 const state = {
   messages: [],
   latestSources: [],
@@ -569,7 +700,6 @@ async function sendPrompt(prompt, taskRef = null) {
     state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
     renderActivity();
   }
-  const requestMessages = [{ role: "user", content: prompt }];
   if (elements.messages) {
     addMessage("user", prompt);
     addMessage("assistant", "Thinking...", true);
@@ -577,15 +707,7 @@ async function sendPrompt(prompt, taskRef = null) {
   updateSettingsSummary();
 
   try {
-    const response = await apiPost("/api/chat", {
-      messages: requestMessages,
-      systemPrompt: elements.instructions.value,
-      modelDeployment: elements.modelSelect.value,
-      reasoningEffort: elements.reasoningEffort.value,
-      maxCompletionTokens: Number(elements.maxTokens.value),
-      dataSourceId: elements.dataSourceSelect.value,
-      top: Number(elements.sourceTop.value)
-    });
+    const response = await requestChat(prompt);
 
     removePending();
     if (elements.messages) {
@@ -627,6 +749,81 @@ async function sendPrompt(prompt, taskRef = null) {
   } finally {
     setBusy(false);
   }
+}
+
+async function requestChat(prompt) {
+  return apiPost("/api/chat", {
+    messages: [{ role: "user", content: prompt }],
+    systemPrompt: elements.instructions.value,
+    modelDeployment: elements.modelSelect.value,
+    reasoningEffort: elements.reasoningEffort.value,
+    maxCompletionTokens: Number(elements.maxTokens.value),
+    dataSourceId: elements.dataSourceSelect.value,
+    top: Number(elements.sourceTop.value)
+  });
+}
+
+async function runComparisonPrompt(activity, task, taskIndex, prompt) {
+  const key = taskKey(activity.id, taskIndex);
+  state.pendingTask = { activityId: activity.id, taskIndex };
+  setBusy(true);
+  state.cellOutputs[key] = {
+    comparison: true,
+    pending: true,
+    prompt,
+    variants: task.actions.map((action) => ({
+      label: action.label,
+      pending: true,
+      settings: stepSetupItems({ ...(activity.settings || {}), ...action })
+    }))
+  };
+  renderActivity();
+
+  try {
+    for (const [index, action] of task.actions.entries()) {
+      applyAction(action, { keepPrompt: true });
+      updateComparisonVariant(key, index, { pending: true });
+      try {
+        const response = await requestChat(prompt);
+        updateComparisonVariant(key, index, {
+          pending: false,
+          response: response.message.content || "No response content returned.",
+          sources: response.sources || [],
+          usage: response.usage || null
+        });
+        applyEffectiveReasoning(response.reasoningEffort);
+        state.latestSources = response.sources || [];
+        renderSources();
+        renderUsage(response);
+      } catch (error) {
+        updateComparisonVariant(key, index, {
+          pending: false,
+          error: error.message || "Request failed."
+        });
+        elements.usageSummary.textContent = "Failed";
+      }
+    }
+
+    state.cellOutputs[key].pending = false;
+    state.pendingTask = null;
+    markTask(activity.id, taskIndex, true);
+  } finally {
+    setBusy(false);
+    renderActivity();
+  }
+}
+
+function updateComparisonVariant(key, variantIndex, patch) {
+  const output = state.cellOutputs[key];
+  if (!output?.comparison) {
+    return;
+  }
+
+  output.variants[variantIndex] = {
+    ...output.variants[variantIndex],
+    ...patch
+  };
+  renderActivity();
 }
 
 function applyEffectiveReasoning(reasoningEffort) {
@@ -818,9 +1015,51 @@ function renderInfoTask(task, taskIndex) {
   `;
 }
 
+function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
+  if (task.comparison) {
+    return task.actions
+      .map((action) => `<span class="task-action variation-chip">${escapeHtml(action.label)}</span>`)
+      .join("");
+  }
+
+  return task.actions
+    .map((action, actionIndex) => {
+      const selected = preparedActionIndex === actionIndex;
+      return `
+        <button class="task-action ${complete && selected ? "complete" : ""} ${selected && !complete ? "active" : ""}" type="button" data-task-index="${taskIndex}" data-action-index="${actionIndex}" aria-pressed="${selected ? "true" : "false"}">
+          <span>${escapeHtml(action.label)}</span>
+          ${selected ? '<span class="action-state">Selected</span>' : ""}
+        </button>
+      `;
+    })
+    .join("");
+}
+
 function renderStepSetup(activity, task, preparedActionIndex) {
+  if (task.comparison) {
+    return `
+      <div class="comparison-settings" aria-label="Comparison setup">
+        ${task.actions
+          .map((action) => {
+            const settings = { ...(activity.settings || {}), ...action };
+            return `
+              <section>
+                <strong>${escapeHtml(action.label)}</strong>
+                ${renderStepSettingsList(stepSetupItems(settings))}
+              </section>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  }
+
   const action = task.actions[preparedActionIndex ?? 0] || {};
   const settings = { ...(activity.settings || {}), ...action };
+  return renderStepSettingsList(stepSetupItems(settings));
+}
+
+function stepSetupItems(settings) {
   const items = [
     ["Model", modelLabelFromSettings(settings)],
     ["Reasoning", reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value)],
@@ -836,6 +1075,10 @@ function renderStepSetup(activity, task, preparedActionIndex) {
     items.push(["Instructions", instructionPresetLabels[settings.instructionsPreset] || settings.instructionsPreset]);
   }
 
+  return items;
+}
+
+function renderStepSettingsList(items) {
   return `
     <dl class="step-settings" aria-label="Step setup">
       ${items
@@ -855,6 +1098,10 @@ function renderStepSetup(activity, task, preparedActionIndex) {
 function renderCellOutput(output, task = null) {
   if (!output) {
     return "";
+  }
+
+  if (output.comparison) {
+    return renderComparisonOutput(output, task);
   }
 
   if (output.pending) {
@@ -887,6 +1134,36 @@ function renderCellOutput(output, task = null) {
       ${sources}
     </div>
     ${renderReflection(task?.afterRun)}
+  `;
+}
+
+function renderComparisonOutput(output, task = null) {
+  const variants = output.variants || [];
+  const complete = !output.pending && variants.every((variant) => !variant.pending);
+  return `
+    <div class="comparison-output">
+      ${variants
+        .map(
+          (variant) => `
+            <article class="comparison-result ${variant.pending ? "pending" : ""}">
+              <div class="comparison-result-head">
+                <strong>${escapeHtml(variant.label)}</strong>
+                <span>${variant.pending ? "Running" : variant.error ? "Failed" : "Complete"}</span>
+              </div>
+              ${renderStepSettingsList(variant.settings || [])}
+              ${
+                variant.pending
+                  ? '<p class="pending-copy">Waiting for response...</p>'
+                  : variant.error
+                    ? `<div class="error-output"><strong>Request failed</strong><p>${escapeHtml(variant.error)}</p></div>`
+                    : `<div class="message-content">${formatMessage(variant.response || "No response content returned.")}</div>`
+              }
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+    ${complete ? renderReflection(task?.afterRun) : ""}
   `;
 }
 
