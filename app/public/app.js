@@ -501,22 +501,18 @@ const elements = {
   activityTitle: document.querySelector("#activity-title"),
   appShell: document.querySelector("#app-shell"),
   appTitle: document.querySelector("#app-title"),
-  chatForm: document.querySelector("#chat-form"),
   dataSourceHelp: document.querySelector("#data-source-help"),
   dataSourceSelect: document.querySelector("#data-source-select"),
   instructions: document.querySelector("#instructions"),
   maxTokens: document.querySelector("#max-tokens"),
-  messages: document.querySelector("#messages"),
   modelHelp: document.querySelector("#model-help"),
   modelSelect: document.querySelector("#model-select"),
   newChat: document.querySelector("#new-chat"),
   presetButtons: document.querySelectorAll(".preset-button"),
-  promptInput: document.querySelector("#prompt-input"),
   reasoningEffort: document.querySelector("#reasoning-effort"),
   resetInstructions: document.querySelector("#reset-instructions"),
   resetLab: document.querySelector("#reset-lab"),
   saveAccessCode: document.querySelector("#save-access-code"),
-  sendButton: document.querySelector("#send-button"),
   settingsSummary: document.querySelector("#settings-summary"),
   sourceCount: document.querySelector("#source-count"),
   sourceTop: document.querySelector("#source-top"),
@@ -554,26 +550,6 @@ async function init() {
 }
 
 function bindEvents() {
-  if (elements.chatForm && elements.promptInput) {
-    elements.chatForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const prompt = elements.promptInput.value.trim();
-      if (!prompt || state.busy) {
-        return;
-      }
-      elements.promptInput.value = "";
-      await sendPrompt(prompt);
-    });
-
-    elements.promptInput.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
-        return;
-      }
-      event.preventDefault();
-      elements.chatForm.requestSubmit();
-    });
-  }
-
   elements.activityNav.addEventListener("click", (event) => {
     const button = event.target.closest("[data-activity-id]");
     if (!button) {
