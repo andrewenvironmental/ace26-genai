@@ -1,6 +1,6 @@
 # ACE26 AI Workshop Lab
 
-This is the public-facing workshop web app for the ACE26 GenAI activity. It mirrors the core Azure AI Foundry playground workflow in a simplified participant-safe interface: participants can move through the full lab, select configured model deployments, edit instructions, change reasoning and response length settings, attach a workshop data source, ask chat questions, and inspect retrieved source snippets.
+This is the public-facing workshop web app for the ACE26 GenAI activity. It provides a simplified participant-safe lab interface: participants can move through the full activity, select configured model deployments, edit instructions, change reasoning and response length settings, attach a workshop data source, ask chat questions, and inspect retrieved source snippets.
 
 The app is intentionally dependency-light. It uses Node.js 20, browser assets in `public/`, and Azure managed identity or local Azure CLI credentials for service calls. `web.config` is included for the current Windows App Service plan.
 
@@ -26,7 +26,7 @@ The existing Bicep template wires these app settings:
 `AZURE_OPENAI_CHAT_DEPLOYMENT` is the default deployment. `AZURE_OPENAI_CHAT_DEPLOYMENTS` is a comma-separated list exposed in the model selector, for example:
 
 ```text
-gpt-5.4-nano,gpt-5.4-mini,gpt-5.4-pro
+gpt-5.4-nano,gpt-5.4-mini
 ```
 
 `AZURE_SEARCH_INDEX` is the default workshop index. `AZURE_SEARCH_INDEXES` is an optional comma-separated list exposed as data sources.

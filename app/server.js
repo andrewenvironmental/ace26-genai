@@ -117,9 +117,11 @@ async function chat(body) {
   const dataSource = resolveDataSource(body.dataSourceId || (body.useGrounding ? settings.dataSources[0]?.id : "none"));
   const sources = dataSource ? (await searchDocuments(lastUserMessage, body.top, dataSource.id)).documents : [];
   const systemPrompt = buildSystemPrompt(body.systemPrompt, sources);
+  const maxCompletionTokens = clampInteger(body.maxCompletionTokens, 100, 4096, 900);
+  const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort);
   const payload = {
     messages: [{ role: "system", content: systemPrompt }, ...messages],
-    max_completion_tokens: clampInteger(body.maxCompletionTokens, 100, 4096, 900),
+    max_completion_tokens: maxCompletionTokens,
     stream: false
   };
 
@@ -127,7 +129,6 @@ async function chat(body) {
     payload.model = deployment;
   }
 
-  const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort);
   if (reasoningEffort) {
     payload.reasoning_effort = reasoningEffort;
   }
@@ -139,6 +140,18 @@ async function chat(body) {
   });
 
   const responseBody = await parseResponse(response);
+  if (!response.ok && shouldTryResponsesFallback(response, responseBody)) {
+    return chatWithResponsesApi({
+      deployment,
+      messages,
+      systemPrompt,
+      reasoningEffort,
+      maxCompletionTokens,
+      sources,
+      dataSource
+    });
+  }
+
   if (!response.ok) {
     throw serviceError(response, responseBody, "Azure AI chat completion failed.");
   }
@@ -153,6 +166,47 @@ async function chat(body) {
     usage: responseBody.usage || null,
     model: responseBody.model || deployment,
     deployment,
+    reasoningEffort: reasoningEffort || null,
+    dataSource: dataSource || null
+  };
+}
+
+async function chatWithResponsesApi({ deployment, messages, systemPrompt, reasoningEffort, maxCompletionTokens, sources, dataSource }) {
+  const responseReasoningEffort = normalizeResponsesReasoningEffort(deployment, reasoningEffort);
+  const payload = {
+    model: deployment,
+    instructions: systemPrompt,
+    input: messages.map(toResponsesInputMessage),
+    max_output_tokens: maxCompletionTokens,
+    store: false,
+    stream: false
+  };
+
+  if (responseReasoningEffort) {
+    payload.reasoning = { effort: responseReasoningEffort };
+  }
+
+  const response = await fetch(openAiResponsesUrl(), {
+    method: "POST",
+    headers: await openAiHeaders(),
+    body: JSON.stringify(payload)
+  });
+
+  const responseBody = await parseResponse(response);
+  if (!response.ok) {
+    throw serviceError(response, responseBody, "Azure AI responses request failed.");
+  }
+
+  return {
+    message: {
+      role: "assistant",
+      content: extractResponsesText(responseBody) || ""
+    },
+    sources,
+    usage: normalizeResponsesUsage(responseBody.usage),
+    model: responseBody.model || deployment,
+    deployment,
+    reasoningEffort: responseReasoningEffort || null,
     dataSource: dataSource || null
   };
 }
@@ -378,6 +432,83 @@ function openAiUrl(deployment) {
   return `${settings.aiEndpoint}/openai/deployments/${encodeURIComponent(
     deployment
   )}/chat/completions?api-version=${encodeURIComponent(settings.openAiApiVersion)}`;
+}
+
+function openAiResponsesUrl() {
+  if (settings.openAiApiVersion === "v1") {
+    return `${settings.aiEndpoint}/openai/v1/responses`;
+  }
+
+  return `${settings.aiEndpoint}/openai/responses?api-version=${encodeURIComponent(settings.openAiApiVersion)}`;
+}
+
+function shouldTryResponsesFallback(response, body) {
+  const message = String(body?.error?.message || body?.message || body?.raw || "").toLowerCase();
+  return response.status === 400 && (message.includes("unsupported") || message.includes("chatcompletion"));
+}
+
+function toResponsesInputMessage(message) {
+  const role = message.role === "assistant" ? "assistant" : "user";
+  if (role === "assistant") {
+    return {
+      type: "message",
+      role,
+      content: [{ type: "output_text", text: message.content }]
+    };
+  }
+
+  return {
+    type: "message",
+    role,
+    content: message.content
+  };
+}
+
+function extractResponsesText(body) {
+  if (body?.output_text) {
+    return body.output_text;
+  }
+
+  if (!Array.isArray(body?.output)) {
+    return "";
+  }
+
+  return body.output
+    .flatMap((item) => (Array.isArray(item?.content) ? item.content : []))
+    .map((content) => content?.text || "")
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function normalizeResponsesUsage(usage) {
+  if (!usage) {
+    return null;
+  }
+
+  return {
+    prompt_tokens: usage.input_tokens,
+    completion_tokens: usage.output_tokens,
+    total_tokens: usage.total_tokens
+  };
+}
+
+function normalizeResponsesReasoningEffort(deployment, value) {
+  const requested = normalizeReasoningEffort(value);
+  if (!requested) {
+    return "";
+  }
+
+  const supported = supportedResponsesReasoningEfforts(deployment);
+  return supported.includes(requested) ? requested : supported[0] || "";
+}
+
+function supportedResponsesReasoningEfforts(deployment) {
+  const normalized = String(deployment || "").toLowerCase();
+  if (normalized.includes("pro")) {
+    return ["medium", "high", "xhigh"];
+  }
+  return ["minimal", "low", "medium", "high"];
 }
 
 async function parseResponse(response) {
@@ -640,7 +771,7 @@ function clampInteger(value, min, max, fallback) {
 }
 
 function normalizeReasoningEffort(value) {
-  return ["minimal", "low", "medium", "high"].includes(value) ? value : "";
+  return ["minimal", "low", "medium", "high", "xhigh"].includes(value) ? value : "";
 }
 
 function loadLocalEnv() {

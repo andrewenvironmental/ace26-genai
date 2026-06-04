@@ -1,24 +1,19 @@
 # Screenshot Assets
 
-The guide uses these PNG filenames:
+The participant guide uses these app screenshots:
 
-- `figure-01-project-home.png`: captured from the workshop project and sanitized.
-- `figure-02-build-models.png`: captured from the workshop project and sanitized.
-- `figure-03-model-playground.png`: captured from the workshop project and sanitized.
-- `figure-04-instructions.png`: captured from the workshop project and sanitized.
-- `figure-05-parameters.png`: captured from the workshop project and sanitized.
-- `figure-06-file-search-documents.png`: captured from the workshop project and sanitized.
-- `figure-07-grounded-response-references.png`: captured from the workshop project and sanitized.
-- `figure-08-structured-table-response.png`: captured from the workshop project and sanitized.
-- `figure-09-guardrail-response.png`: captured from the workshop project and sanitized.
+- `figure-01-lab-overview.png`: initial ACE26 AI Workshop Lab screen with settings, activity parts, and Part 1 steps.
+- `figure-02-step-prepared.png`: warmup step after `Configure warmup setup` is selected.
+- `figure-03-system-instructions.png`: system instructions drawer with the public education instructions applied.
+- `figure-04-model-settings.png`: Part 2 response-budget setup with model settings visible.
+- `figure-05-document-grounding.png`: Part 4 document-grounding setup with `Workshop documents` selected.
+- `figure-06-guardrail-setup.png`: Part 5 guardrail setup with the off-topic test prompt prepared.
 
-Sanitization boxes hide the real project name in the top header. Figures that show the `documents` vector store also hide the vector store ID. Figures 4-7 and 9 are cropped around the relevant control or response area so the guide does not spend page space on empty chat panels.
-
-Refresh these screenshots if the Microsoft Foundry UI changes before publication.
+Refresh these screenshots whenever the app copy or activity flow changes.
 
 Screenshot guidance:
 
-- Capture the signed-in workshop project, not a personal sandbox.
-- Avoid showing secrets, keys, subscription IDs, or participant email addresses.
-- Prefer full-width screenshots that show the left setup panel and the chat/output area together.
-- For slow file-search examples, capture the completed response and reference/citation area rather than the loading state.
+- Capture the workshop app, not the Azure Foundry portal.
+- Avoid showing secrets, keys, subscription IDs, access codes, or participant email addresses.
+- Prefer screenshots that show the exact button labels and step wording participants see.
+- For document-grounded examples, it is acceptable to show the prepared step before running the prompt if live model latency is a concern.

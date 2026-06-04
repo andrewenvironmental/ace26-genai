@@ -116,7 +116,7 @@ param modelDeployments array = [
 ]
 
 @description('Chat model deployment name workshop participants should select in Foundry.')
-param chatDeploymentName string = 'gpt-5.4-pro'
+param chatDeploymentName string = 'gpt-5.4-mini'
 
 @description('Comma-separated chat model deployment names exposed in the workshop web app model selector.')
 param playgroundChatDeploymentNames string = 'gpt-5.4-nano,gpt-5.4-mini,gpt-5.4-pro'
@@ -323,7 +323,7 @@ module webApp 'modules/webApp.bicep' = {
       AZURE_STORAGE_CONTAINER: documentContainerName
       AI_FOUNDRY_PORTAL_URL: 'https://ai.azure.com'
       PUBLIC_API_ACCESS_MODE: 'code'
-      PUBLIC_API_RATE_LIMIT_PER_MINUTE: '120'
+      PUBLIC_API_RATE_LIMIT_PER_MINUTE: '300'
       PORT: '8080'
       WEBSITES_PORT: '8080'
     }
