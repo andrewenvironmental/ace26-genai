@@ -676,19 +676,11 @@ async function sendPrompt(prompt, taskRef = null) {
     state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
     renderActivity();
   }
-  if (elements.messages) {
-    addMessage("user", prompt);
-    addMessage("assistant", "Thinking...", true);
-  }
   updateSettingsSummary();
 
   try {
     const response = await requestChat(prompt);
 
-    removePending();
-    if (elements.messages) {
-      addMessage("assistant", response.message.content || "No response content returned.");
-    }
     applyEffectiveReasoning(response.reasoningEffort);
     if (taskRef) {
       state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = {
@@ -703,16 +695,12 @@ async function sendPrompt(prompt, taskRef = null) {
     renderUsage(response);
     completePendingTask();
   } catch (error) {
-    removePending();
     if (taskRef) {
       state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = {
         prompt,
         error: error.message || "Request failed."
       };
       renderActivity();
-    }
-    if (elements.messages) {
-      addMessage("assistant", `Request failed: ${error.message}`);
     }
     elements.usageSummary.textContent = "Failed";
     if (state.accessRequired && (error.status === 401 || error.status === 403)) {
@@ -1455,10 +1443,6 @@ function removePending() {
 
 function setBusy(isBusy) {
   state.busy = isBusy;
-  if (elements.sendButton) {
-    elements.sendButton.disabled = isBusy;
-    elements.sendButton.textContent = isBusy ? "Sending" : "Send";
-  }
 }
 
 function selectedModel() {
