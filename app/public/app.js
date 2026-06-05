@@ -29,6 +29,17 @@ const activities = [
         ]
       },
       {
+        title: "System instructions are part of the exercise",
+        detail:
+          "Some steps change the background directions sent with the prompt. When that happens, the step shows those system instructions inline so you can predict why the response should change.",
+        body:
+          "Do not treat the prompt box as the whole request. The full setup includes the model, system instructions, token budget, reasoning setting, and any retrieved document snippets.",
+        questions: [
+          "What does the system instruction ask the assistant to do differently?",
+          "Would you expect that change to affect tone, scope, format, or evidence?"
+        ]
+      },
+      {
         title: "How to compare outputs",
         detail:
           "Small changes can produce subtle differences. Compare responses by looking for evidence, unsupported specifics, missing caveats, format compliance, and usefulness for the intended audience.",
@@ -46,11 +57,17 @@ const activities = [
     kicker: "Part 1",
     title: "Use the Workshop Playground",
     summary: "Send a baseline prompt, then use instructions and prompt constraints to shape the answer.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 900 },
+    settings: {
+      modelHint: "mini",
+      dataSourceId: "none",
+      reasoningEffort: "minimal",
+      maxTokens: 900,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "1a. Configure the warmup",
-        detail: "Use the warmup setup to select the fast model and place the one-sentence prompt in this step. Run it to confirm the app can reach the model.",
+        detail: "Start with a deliberately simple prompt. The point is to get a first answer on the page, then ask what you would change or ask next to make it more useful.",
         actions: [
           {
             label: "Configure warmup setup",
@@ -119,7 +136,13 @@ const activities = [
     kicker: "Part 2",
     title: "Adjust Model Settings",
     summary: "Change response budget and reasoning effort, then compare speed, detail, and usefulness.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 800 },
+    settings: {
+      modelHint: "mini",
+      dataSourceId: "none",
+      reasoningEffort: "minimal",
+      maxTokens: 800,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "2a. Set a response budget",
@@ -170,7 +193,13 @@ const activities = [
     kicker: "Part 3",
     title: "Knowledge Limits",
     summary: "Ask questions that need current or organization-specific verification.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 900 },
+    settings: {
+      modelHint: "mini",
+      dataSourceId: "none",
+      reasoningEffort: "minimal",
+      maxTokens: 900,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "3a. Test a not-yet-knowable fact",
@@ -224,7 +253,14 @@ const activities = [
     kicker: "Part 4",
     title: "Ground Responses With Documents",
     summary: "Attach the workshop document index and inspect the retrieved snippets behind the answer.",
-    settings: { modelHint: "mini", dataSourceHint: "documents", reasoningEffort: "minimal", maxTokens: 1100, sourceTop: 4 },
+    settings: {
+      modelHint: "mini",
+      dataSourceHint: "documents",
+      reasoningEffort: "minimal",
+      maxTokens: 1100,
+      sourceTop: 4,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "4a. Attach documents for a focused question",
@@ -272,7 +308,13 @@ const activities = [
     kicker: "Part 5",
     title: "Safety And Guardrails",
     summary: "Use instructions to constrain scope, then test whether the assistant stays inside it.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 700 },
+    settings: {
+      modelHint: "mini",
+      dataSourceId: "none",
+      reasoningEffort: "minimal",
+      maxTokens: 700,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "5a. Apply a scope guardrail",
@@ -292,6 +334,7 @@ const activities = [
         actions: [
           {
             label: "Use source-verification prompt",
+            instructionsPreset: "guardrail",
             prompt: "In two sentences, explain why source verification matters for public infrastructure AI tools."
           }
         ]
@@ -303,7 +346,13 @@ const activities = [
     kicker: "Wrap Up",
     title: "Compare And Discuss",
     summary: "Capture what changed when you adjusted instructions, model settings, and document grounding.",
-    settings: { modelHint: "mini", dataSourceId: "none", reasoningEffort: "minimal", maxTokens: 700 },
+    settings: {
+      modelHint: "mini",
+      dataSourceId: "none",
+      reasoningEffort: "minimal",
+      maxTokens: 700,
+      instructionsPreset: "default"
+    },
     tasks: [
       {
         title: "6a. Compare what changed",
@@ -333,10 +382,13 @@ const activities = [
 
 const stepReflections = {
   "1a. Configure the warmup": {
-    title: "What happened",
+    title: "First pass, not final answer",
     body:
-      "This run used the fast warmup model with a short prompt. It checks connectivity and gives everyone a low-stakes first response.",
-    questions: ["Was the answer short enough for the task?", "What would you need to add if this were for a real utility workflow?"]
+      "This warmup introduces the activity with a simple answer, but the answer is only a starting point. For a real utility workflow, you might ask for a list of use cases, choose a specific team or task, request examples, compare risks, or move to a different topic.",
+    questions: [
+      "What follow-up would make this more useful: a list, examples, a different audience, or another topic?",
+      "What context about the utility team would change the answer?"
+    ]
   },
   "1b. Run a broad technical prompt": {
     title: "What changed",
@@ -592,6 +644,12 @@ function bindEvents() {
         await runComparisonPrompt(activity, task, taskIndex, prompt);
         return;
       }
+      if (task.actions?.length && state.preparedActions[key] === undefined) {
+        const defaultActionIndex = 0;
+        applyAction(stepActionSettings(activity, task, defaultActionIndex), { keepPrompt: true });
+        state.preparedActions[key] = defaultActionIndex;
+        state.cellPrompts[key] = prompt;
+      }
       state.pendingTask = { activityId: activity.id, taskIndex };
       await sendPrompt(prompt, state.pendingTask);
       return;
@@ -606,7 +664,7 @@ function bindEvents() {
       const actionIndex = Number(actionButton.dataset.actionIndex);
       const action = task.actions[actionIndex];
       const key = taskKey(activity.id, taskIndex);
-      applyAction(action, { keepPrompt: true });
+      applyAction(stepActionSettings(activity, task, actionIndex), { keepPrompt: true });
       state.pendingTask = { activityId: activity.id, taskIndex };
       state.preparedActions[key] = actionIndex;
       state.cellPrompts[key] = action.prompt || defaultTaskPrompt(task);
@@ -721,13 +779,20 @@ async function sendPrompt(prompt, taskRef = null) {
 async function requestChat(prompt, settings = null, options = {}) {
   return apiPost("/api/chat", {
     messages: [{ role: "user", content: prompt }],
-    systemPrompt: elements.instructions.value,
+    systemPrompt: systemPromptFromSettings(settings),
     modelDeployment: modelIdFromSettings(settings) || elements.modelSelect.value,
     reasoningEffort: settings?.reasoningEffort ?? elements.reasoningEffort.value,
     maxCompletionTokens: Number(settings?.maxTokens || elements.maxTokens.value),
     dataSourceId: dataSourceIdFromSettings(settings) || elements.dataSourceSelect.value,
     top: Number(settings?.sourceTop || elements.sourceTop.value)
   }, options);
+}
+
+function systemPromptFromSettings(settings = null) {
+  if (settings?.instructionsPreset && instructionPresets[settings.instructionsPreset]) {
+    return instructionPresets[settings.instructionsPreset];
+  }
+  return elements.instructions.value;
 }
 
 async function runComparisonPrompt(activity, task, taskIndex, prompt) {
@@ -1025,6 +1090,7 @@ function renderStepSetup(activity, task, preparedActionIndex) {
               <section>
                 <strong>${escapeHtml(action.label)}</strong>
                 ${renderStepSettingsList(stepSetupItems(settings))}
+                ${renderInstructionPreview(settings)}
               </section>
             `;
           })
@@ -1035,23 +1101,21 @@ function renderStepSetup(activity, task, preparedActionIndex) {
 
   const action = task.actions[preparedActionIndex ?? 0] || {};
   const settings = { ...(activity.settings || {}), ...action };
-  return renderStepSettingsList(stepSetupItems(settings));
+  return `${renderStepSettingsList(stepSetupItems(settings))}${renderInstructionPreview(settings)}`;
 }
 
 function stepSetupItems(settings) {
+  const instructions = instructionInfoFromSettings(settings);
   const items = [
     ["Model", modelLabelFromSettings(settings)],
     ["Reasoning", reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value)],
     ["Max tokens", settings.maxTokens || elements.maxTokens.value],
-    ["Grounding", dataSourceLabelFromSettings(settings)]
+    ["Grounding", dataSourceLabelFromSettings(settings)],
+    ["Instructions", instructions.label]
   ];
 
   if (settings.sourceTop || settings.dataSourceHint || (settings.dataSourceId && settings.dataSourceId !== "none")) {
     items.push(["Snippets", settings.sourceTop || elements.sourceTop.value]);
-  }
-
-  if (settings.instructionsPreset) {
-    items.push(["Instructions", instructionPresetLabels[settings.instructionsPreset] || settings.instructionsPreset]);
   }
 
   return items;
@@ -1072,6 +1136,63 @@ function renderStepSettingsList(items) {
         .join("")}
     </dl>
   `;
+}
+
+function renderInstructionPreview(settings) {
+  const instructions = instructionInfoFromSettings(settings);
+  const shouldPreview =
+    settings.instructionsPreset && settings.instructionsPreset !== "default" ||
+    instructions.preset === "guardrail" ||
+    instructions.preset === "public" ||
+    instructions.preset === "custom";
+
+  if (!shouldPreview) {
+    return "";
+  }
+
+  return `
+    <details class="instruction-preview" open>
+      <summary>System instructions applied: ${escapeHtml(instructions.label)}</summary>
+      <p>${escapeHtml(instructions.text)}</p>
+      <div class="instruction-prompt">${escapeHtml(instructionPreviewPrompt(instructions.preset))}</div>
+    </details>
+  `;
+}
+
+function instructionInfoFromSettings(settings = {}) {
+  if (settings.instructionsPreset && instructionPresets[settings.instructionsPreset]) {
+    return {
+      label: instructionPresetLabels[settings.instructionsPreset] || settings.instructionsPreset,
+      preset: settings.instructionsPreset,
+      text: instructionPresets[settings.instructionsPreset]
+    };
+  }
+
+  const currentText = elements.instructions?.value || instructionPresets.default;
+  const presetEntry = Object.entries(instructionPresets).find(([, text]) => text === currentText);
+  if (presetEntry) {
+    return {
+      label: instructionPresetLabels[presetEntry[0]] || presetEntry[0],
+      preset: presetEntry[0],
+      text: presetEntry[1]
+    };
+  }
+
+  return {
+    label: "Custom",
+    preset: "custom",
+    text: currentText
+  };
+}
+
+function instructionPreviewPrompt(preset) {
+  if (preset === "public") {
+    return "Before running, predict how this will change tone, reading level, length, and word choice.";
+  }
+  if (preset === "guardrail") {
+    return "Before running, predict what this should refuse and what it should still answer.";
+  }
+  return "Before running, predict how this background instruction will change the response.";
 }
 
 function renderCellOutput(output, task = null) {
@@ -1198,6 +1319,10 @@ function focusCellPrompt(activityId, taskIndex) {
   requestAnimationFrame(() => {
     elements.activityTasks.querySelector(`[data-cell-prompt="${CSS.escape(key)}"]`)?.focus();
   });
+}
+
+function stepActionSettings(activity, task, actionIndex) {
+  return { ...(activity.settings || {}), ...(task.actions?.[actionIndex] || {}) };
 }
 
 function focusFirstStepPrompt() {
@@ -1590,6 +1715,11 @@ function renderTextBlocks(text) {
   let index = 0;
 
   while (index < lines.length) {
+    if (!lines[index].trim()) {
+      index += 1;
+      continue;
+    }
+
     if (isTableStart(lines, index)) {
       const tableLines = [];
       while (index < lines.length && lines[index].includes("|")) {
@@ -1600,18 +1730,75 @@ function renderTextBlocks(text) {
       continue;
     }
 
-    const textLines = [];
-    while (index < lines.length && !isTableStart(lines, index)) {
-      textLines.push(lines[index]);
+    const heading = parseHeading(lines[index]);
+    if (heading) {
+      blocks.push(`<${heading.tag}>${renderInline(heading.text)}</${heading.tag}>`);
+      index += 1;
+      continue;
+    }
+
+    if (isUnorderedListLine(lines[index])) {
+      const items = [];
+      while (index < lines.length && isUnorderedListLine(lines[index])) {
+        items.push(lines[index].replace(/^\s*[-*]\s+/, ""));
+        index += 1;
+      }
+      blocks.push(renderList("ul", items));
+      continue;
+    }
+
+    if (isOrderedListLine(lines[index])) {
+      const items = [];
+      while (index < lines.length && isOrderedListLine(lines[index])) {
+        items.push(lines[index].replace(/^\s*\d+[.)]\s+/, ""));
+        index += 1;
+      }
+      blocks.push(renderList("ol", items));
+      continue;
+    }
+
+    const paragraphLines = [];
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      !isTableStart(lines, index) &&
+      !parseHeading(lines[index]) &&
+      !isUnorderedListLine(lines[index]) &&
+      !isOrderedListLine(lines[index])
+    ) {
+      paragraphLines.push(lines[index].trim());
       index += 1;
     }
-    const rendered = textLines.map(renderInline).join("<br>").trim();
-    if (rendered) {
-      blocks.push(`<p>${rendered}</p>`);
+
+    if (paragraphLines.length) {
+      blocks.push(`<p>${paragraphLines.map(renderInline).join(" ")}</p>`);
     }
   }
 
   return blocks.join("");
+}
+
+function parseHeading(line) {
+  const match = line.match(/^(#{1,4})\s+(.+)$/);
+  if (!match) {
+    return null;
+  }
+  return {
+    tag: match[1].length >= 3 ? "h4" : "h3",
+    text: match[2].trim()
+  };
+}
+
+function isUnorderedListLine(line) {
+  return /^\s*[-*]\s+/.test(line);
+}
+
+function isOrderedListLine(line) {
+  return /^\s*\d+[.)]\s+/.test(line);
+}
+
+function renderList(tag, items) {
+  return `<${tag}>${items.map((item) => `<li>${renderInline(item.trim())}</li>`).join("")}</${tag}>`;
 }
 
 function isTableStart(lines, index) {
@@ -1649,7 +1836,15 @@ function parseTableRow(row) {
 }
 
 function renderInline(value) {
-  return escapeHtml(value).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  return String(value)
+    .split(/(`[^`]*`)/g)
+    .map((part) => {
+      if (/^`[^`]*`$/.test(part)) {
+        return `<code>${escapeHtml(part.slice(1, -1))}</code>`;
+      }
+      return escapeHtml(part).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    })
+    .join("");
 }
 
 function escapeHtml(value) {

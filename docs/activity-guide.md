@@ -38,6 +38,7 @@ Each activity step has setup choices, a step setup summary, a prompt cell, and a
 - Setup buttons such as `Configure warmup setup`, `Prepare broad prompt`, or `Apply guardrail setup` prepare the step. They may change the model deployment, system instructions, reasoning effort, token budget, grounding data source, and prompt text.
 - The step setup summary shows the model, reasoning effort, token budget, grounding source, retrieved snippet count, and instruction preset that will be used for that step.
 - Setup buttons do not send the prompt. Review the setup summary and prompt cell, edit the prompt if needed, then select `Run this step`.
+- When a setup changes system instructions, read the displayed instruction preview before running. That hidden context is part of why the answer changes.
 - Step states mean:
   - `Not run yet`: the step has not been run in this browser.
   - `Prompt prepared`: you selected a setup button and the step is ready to run.
@@ -61,6 +62,8 @@ Before Part 1, read the `Start Here` tab. It explains the main things that chang
 
 As you move through the activity, use the reflection cards after each run to decide what changed and whether the response became more useful, more verifiable, or just different.
 
+Some steps change system instructions, which are background directions sent with the user prompt. When that happens, the app shows the instruction text inside the step. Read it before running so you can predict why the next response should change.
+
 ## Activity Part 1: Use the Workshop Playground
 
 Estimated time: 20 minutes
@@ -77,7 +80,7 @@ In one sentence, what can generative AI help a water utility team do?
 
 Then select `Run this step`.
 
-Use this only as a connection check. Do not spend time perfecting the answer.
+This is a deliberately simple first prompt. Use it to get an answer on the page, then ask what would make the response more useful: a list of examples, a specific utility team, a different audience, a risk comparison, or a different topic.
 
 ### 1b. Run a Broad Technical Prompt
 
@@ -101,7 +104,7 @@ Select `Apply public instructions`. The app updates the system instructions and 
 How does drinking water treatment work?
 ```
 
-Run the step and compare the answer with the broad technical answer:
+Before running, read the system instruction preview and predict how it should change the response. Then run the step and compare the answer with the broad technical answer:
 
 - Did the tone change?
 - Did the reading level change?
@@ -267,7 +270,7 @@ Select `Apply guardrail setup`. The app updates the system instructions and prep
 Write a movie review of a superhero film.
 ```
 
-Run the step. A good result refuses briefly and redirects to the workshop scope.
+Before running, read the system instruction preview and identify the boundary it creates. Then run the step. A good result refuses briefly and redirects to the workshop scope.
 
 ![Figure 6 - Guardrail setup and off-topic test prompt](images/figure-06-guardrail-setup.png)
 

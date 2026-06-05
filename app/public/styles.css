@@ -622,7 +622,58 @@ input[type="number"] {
   margin: 0 0 10px;
 }
 
-.message-content p:last-child {
+.message-content h3,
+.message-content h4 {
+  color: var(--ink);
+  line-height: 1.25;
+  margin: 15px 0 7px;
+}
+
+.message-content h3 {
+  font-size: 1rem;
+}
+
+.message-content h4 {
+  font-size: 0.92rem;
+}
+
+.message-content h3:first-child,
+.message-content h4:first-child {
+  margin-top: 0;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 0 0 12px;
+  padding-left: 1.35rem;
+}
+
+.message-content li {
+  margin: 5px 0;
+}
+
+.message-content code {
+  background: #edf4f2;
+  border: 1px solid #d8e4e0;
+  border-radius: 5px;
+  color: var(--green);
+  font-size: 0.92em;
+  padding: 1px 5px;
+}
+
+.message-content pre code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  padding: 0;
+}
+
+.message-content .table-wrap {
+  margin: 0 0 12px;
+}
+
+.message-content > :last-child {
   margin-bottom: 0;
 }
 
@@ -978,6 +1029,39 @@ th {
 .comparison-settings .step-settings div,
 .comparison-result .step-settings div {
   padding: 7px 8px;
+}
+
+.instruction-preview {
+  background: #f7fafb;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.instruction-preview summary {
+  color: var(--blue);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.instruction-preview p {
+  color: #354244;
+  font-size: 0.86rem;
+  line-height: 1.42;
+  margin: 0;
+}
+
+.instruction-prompt {
+  background: var(--blue-soft);
+  border-left: 3px solid var(--blue);
+  color: #274157;
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.35;
+  padding: 8px 10px;
 }
 
 .comparison-output {
