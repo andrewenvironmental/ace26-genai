@@ -24,6 +24,10 @@ infra/resource-group.json
 # Extracted Office document scratch files
 .azure/docx-extract/
 
+# Private presentation artifacts can contain author metadata or attendee details.
+*.ppt
+*.pptx
+
 # OS/editor noise
 .DS_Store
 Thumbs.db

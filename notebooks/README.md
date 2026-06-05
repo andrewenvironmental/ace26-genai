@@ -13,4 +13,4 @@ The notebook avoids hard-coded secrets. Use environment variables, prompted keys
 
 For normal workshop delivery, use the Azure-hosted public web app and the docs under `../docs/`.
 
-For the last-resort notebook flow, see `../docs/colab-fallback.md`.
+For the last-resort notebook flow, keep operational runbooks local-only so tenant-specific settings do not drift into the public repo.
