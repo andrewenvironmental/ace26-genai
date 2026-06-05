@@ -7,6 +7,9 @@ param documentContainerName string
 @description('Key Vault name.')
 param keyVaultName string
 
+@description('Azure Container Registry name used by the public web app. Leave empty if no registry is used.')
+param containerRegistryName string = ''
+
 @description('Azure AI Search service name.')
 param searchServiceName string
 
@@ -18,6 +21,9 @@ param aiServicesProjectName string
 
 @description('Managed identity principal IDs for Foundry project resources.')
 param foundryPrincipalIds array
+
+@description('Managed identity principal IDs for workshop application resources that need model and search read access.')
+param applicationPrincipalIds array = []
 
 @description('Managed identity principal ID for Azure AI Search. Leave empty if using an existing service without a managed identity.')
 param searchPrincipalId string
@@ -44,6 +50,7 @@ var searchIndexDataReaderRoleId = subscriptionResourceId('Microsoft.Authorizatio
 var storageBlobDataContributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
 var storageBlobDataReaderRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1')
 var keyVaultSecretsUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+var acrPullRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
   name: storageAccountName
@@ -51,6 +58,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
+}
+
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = if (!empty(containerRegistryName)) {
+  name: containerRegistryName
 }
 
 resource searchService 'Microsoft.Search/searchServices@2025-05-01' existing = {
@@ -206,4 +217,47 @@ resource participantSearchIndexReaders 'Microsoft.Authorization/roleAssignments@
   }
 }]
 
-output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 3)
+resource applicationCognitiveServicesUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(aiServicesAccount.id, principalId, cognitiveServicesUserRoleId, 'workshop-app-foundry')
+  scope: aiServicesAccount
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: cognitiveServicesUserRoleId
+  }
+}]
+
+resource applicationAiOpenAiUsers 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(aiServicesAccount.id, principalId, cognitiveServicesOpenAiUserRoleId, 'workshop-app-openai')
+  scope: aiServicesAccount
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: cognitiveServicesOpenAiUserRoleId
+  }
+}]
+
+resource applicationSearchIndexReaders 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId)) {
+  name: guid(searchService.id, principalId, searchIndexDataReaderRoleId, 'workshop-app')
+  scope: searchService
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: searchIndexDataReaderRoleId
+  }
+}]
+
+resource applicationAcrPulls 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in applicationPrincipalIds: if (!empty(principalId) && !empty(containerRegistryName)) {
+  name: guid(containerRegistry.id, principalId, acrPullRoleId, 'workshop-app')
+  scope: containerRegistry
+  properties: {
+    principalId: principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: acrPullRoleId
+  }
+}]
+
+var nonEmptyApplicationPrincipalIds = filter(applicationPrincipalIds, principalId => !empty(principalId))
+var applicationRoleAssignmentCount = length(nonEmptyApplicationPrincipalIds) * (empty(containerRegistryName) ? 3 : 4)
+
+output roleAssignmentCount int = (empty(searchPrincipalId) ? 0 : 2) + (length(foundryPrincipalIds) * 8) + (length(participantPrincipalIds) * 3) + applicationRoleAssignmentCount

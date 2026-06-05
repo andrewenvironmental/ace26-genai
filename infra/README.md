@@ -26,11 +26,17 @@ Recommended layout:
 
 For this workshop, keep role assignments and model deployments disabled by default in public examples. Enable them only in local/private parameters after IT confirms permissions, provider registration, regional policy, model access, and quota.
 
-Lowest-cost defaults:
+Public app hosting defaults:
+
+- The workshop web app is now modeled as a Linux custom-container App Service.
+- Container Registry is enabled by default because the GitHub Actions workflow builds and pushes the public app image there.
+- The App Service plan defaults to `B1`; Linux custom containers are not compatible with the prior free `F1` Windows placeholder.
+- The public app API defaults to access-code mode in production. Set `WORKSHOP_ACCESS_CODE` or enable App Service Authentication before exposing the URL.
+
+Lowest-cost supporting-service defaults:
 
 - Azure AI Search defaults to `free`. Azure AI Search SKU cannot be downgraded in place after creation, so moving from `basic` to `free` requires recreating the Search service or the resource group.
 - Application Insights is disabled by default because it can create a managed Log Analytics resource group.
-- Container Registry is disabled by default for the workshop demo unless app/container workflows require it.
 - Model deployments are disabled by default. Deploy only the specific chat and embedding deployments needed for the workshop.
 
 Before provisioning, run the enablement check:
@@ -73,6 +79,7 @@ permission errors, ask an Owner or User Access Administrator to run the commands
 The focused handoff for this specific portal error is in `FOUNDRY_RBAC_FIX.md`.
 The roles that were actually granted during setup are recorded in `PERMISSIONS_GRANTED.md`.
 The 100-participant model capacity plan is in `WORKSHOP_CAPACITY.md`.
+The workshop web playground app is in `../app` and is wired to the AI Services, model deployment, and Search index outputs from `main.bicep`.
 
 Example deployment flow:
 
@@ -120,3 +127,13 @@ To tear down and reprovision the demo environment:
   -IncludeManagedResourceGroups `
   -Yes
 ```
+
+To run the web playground locally after resources exist:
+
+```powershell
+az login
+cd app
+npm start
+```
+
+Open `http://localhost:5050`. For local development, set the same app settings shown in `.env.example` plus `AZURE_AI_SERVICES_ENDPOINT`, `AZURE_OPENAI_CHAT_DEPLOYMENT`, `AZURE_SEARCH_ENDPOINT`, and `AZURE_SEARCH_INDEX`.

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ACE26 AI Pre-conference Workshop</title>
+    <link rel="stylesheet" href="/styles.css?v=20260604-markdown-instruction-preview">
+  </head>
+  <body class="configuring">
+    <div id="access-gate" class="access-gate" hidden>
+      <form id="access-form" class="access-card">
+        <div class="brand-block">
+          <div class="mark" aria-hidden="true">AI</div>
+          <div>
+            <h1>ACE26 AI Pre-conference Workshop</h1>
+          </div>
+        </div>
+        <label for="access-code">Workshop access code</label>
+        <div class="access-row">
+          <input id="access-code" type="password" autocomplete="off" placeholder="Enter code">
+          <button id="save-access-code" class="secondary-button" type="submit">Start</button>
+        </div>
+        <p id="access-help" class="field-help">Enter the workshop code to start the activity.</p>
+      </form>
+    </div>
+
+    <div id="app-shell" class="app-shell notebook-shell">
+      <header class="notebook-header">
+        <div class="brand-block">
+          <div class="mark" aria-hidden="true">AI</div>
+          <div>
+            <h1 id="app-title">ACE26 AI Pre-conference Workshop</h1>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="new-chat" class="secondary-button" type="button">Clear responses</button>
+          <button id="reset-lab" class="ghost-button" type="button">Reset lab</button>
+        </div>
+      </header>
+
+      <main class="notebook-main" aria-label="Workshop notebook">
+        <nav id="activity-nav" class="part-list" aria-label="Activity parts"></nav>
+
+        <section class="activity-panel" aria-label="Activity steps">
+          <div class="activity-head">
+            <div>
+              <p id="activity-kicker" class="eyebrow">Part 1</p>
+              <h2 id="activity-title">Loading activity</h2>
+              <p id="activity-summary"></p>
+            </div>
+            <div class="activity-progress">
+              <span id="activity-progress">0 of 0</span>
+              <div class="progress-meter" aria-hidden="true"><span id="activity-progress-bar"></span></div>
+            </div>
+          </div>
+          <div id="activity-tasks" class="activity-tasks"></div>
+        </section>
+
+        <details class="run-context">
+          <summary>
+            <span>Last run context</span>
+            <span id="usage-summary">Ready</span>
+          </summary>
+          <div class="run-context-grid">
+            <section>
+              <div class="section-title">
+                <h2>Sources</h2>
+                <span id="source-count">0</span>
+              </div>
+              <p class="source-explainer">Retrieved snippets are added to the model context for grounded answers.</p>
+              <div id="sources" class="sources empty-state">No retrieved sources yet.</div>
+            </section>
+            <section>
+              <div class="section-title">
+                <h2>Run Settings</h2>
+              </div>
+              <div id="settings-summary" class="settings-summary"></div>
+            </section>
+          </div>
+        </details>
+
+        <details class="settings-card manual-settings" aria-label="Manual model, instructions, and grounding settings">
+          <summary>Manual run controls</summary>
+          <div class="manual-settings-body">
+            <div class="settings-grid">
+              <div class="setting-field wide">
+                <label for="model-select">Model deployment</label>
+                <select id="model-select"></select>
+                <p id="model-help" class="field-help">Loading model options.</p>
+              </div>
+              <div class="setting-field">
+                <label for="reasoning-effort">Reasoning</label>
+                <select id="reasoning-effort">
+                  <option value="minimal">Minimal</option>
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="">Default</option>
+                </select>
+              </div>
+              <div class="setting-field compact">
+                <label for="max-tokens">Max completion tokens</label>
+                <input id="max-tokens" type="number" min="100" max="4096" step="100" value="900">
+              </div>
+              <div class="setting-field compact">
+                <label for="source-top">Retrieved snippets</label>
+                <input id="source-top" type="number" min="1" max="8" step="1" value="4">
+              </div>
+              <div class="setting-field wide">
+                <label for="data-source-select">Grounding data source</label>
+                <select id="data-source-select"></select>
+                <p id="data-source-help" class="field-help">No grounding selected.</p>
+              </div>
+            </div>
+
+            <details class="instructions-drawer">
+              <summary>System instructions</summary>
+              <div class="instructions-body">
+                <div class="section-title">
+                  <span>Assistant behavior</span>
+                  <button id="reset-instructions" class="text-button" type="button">Reset</button>
+                </div>
+                <textarea id="instructions" rows="5"></textarea>
+                <div class="preset-grid" aria-label="Instruction presets">
+                  <button class="preset-button" type="button" data-preset="default">Workshop</button>
+                  <button class="preset-button" type="button" data-preset="public">Public education</button>
+                  <button class="preset-button" type="button" data-preset="guardrail">Guardrail</button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </details>
+      </main>
+    </div>
+
+    <script src="/app.js?v=20260604-markdown-instruction-preview" type="module"></script>
+  </body>
+</html>
