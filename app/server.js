@@ -75,6 +75,11 @@ createServer(async (req, res) => {
       return sendJson(res, 200, getClientConfig());
     }
 
+    if (req.method === "POST" && url.pathname === "/api/access/validate") {
+      enforceApiAccess(req);
+      return sendJson(res, 200, { ok: true });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/search") {
       enforceApiAccess(req);
       enforceApiRateLimit(req, "search");

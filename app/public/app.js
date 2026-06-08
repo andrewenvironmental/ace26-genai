@@ -590,7 +590,7 @@ async function init() {
     elements.appTitle.textContent = workshopDisplayName;
     document.title = workshopDisplayName;
     elements.instructions.value = instructionPresets.default;
-    configureAccessGate(config.access);
+    await configureAccessGate(config.access);
 
     populateModels(config.models || []);
     populateDataSources(config.dataSources || []);
@@ -703,9 +703,9 @@ function bindEvents() {
     elements.instructions.value = instructionPresets.default;
   });
 
-  elements.accessForm.addEventListener("submit", (event) => {
+  elements.accessForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    saveAccessCode();
+    await saveAccessCode();
   });
 
   elements.presetButtons.forEach((button) => {
@@ -905,21 +905,37 @@ function populateModels(models) {
   updateModelHelp();
 }
 
-function configureAccessGate(access) {
+async function configureAccessGate(access) {
   const codeRequired = Boolean(access?.codeRequired);
   state.accessRequired = codeRequired;
   elements.accessCode.value = state.accessCode;
 
-  if (!codeRequired || state.accessCode) {
+  if (!codeRequired) {
     hideAccessGate();
     return;
   }
 
-  elements.accessHelp.textContent = "Enter the workshop code to start the activity.";
+  if (state.accessCode) {
+    elements.accessHelp.textContent = "Checking saved access code...";
+    const isValid = await validateAccessCode(state.accessCode);
+    if (isValid) {
+      elements.accessHelp.textContent = "Access code accepted.";
+      hideAccessGate();
+      return;
+    }
+
+    state.accessCode = "";
+    localStorage.removeItem("ace26-access-code");
+    elements.accessCode.value = "";
+    elements.accessHelp.textContent = "Saved access code was not accepted. Enter the workshop code to continue.";
+  } else {
+    elements.accessHelp.textContent = "Enter the workshop code to start the activity.";
+  }
+
   showAccessGate();
 }
 
-function saveAccessCode() {
+async function saveAccessCode() {
   const code = elements.accessCode.value.trim();
   if (!code) {
     elements.accessHelp.textContent = "Enter the workshop code to continue.";
@@ -927,11 +943,36 @@ function saveAccessCode() {
     return;
   }
 
+  elements.saveAccessCode.disabled = true;
+  elements.accessHelp.textContent = "Checking access code...";
+  const isValid = await validateAccessCode(code);
+  elements.saveAccessCode.disabled = false;
+  if (!isValid) {
+    state.accessCode = "";
+    localStorage.removeItem("ace26-access-code");
+    elements.accessHelp.textContent = "That code was not accepted. Check the workshop code and try again.";
+    elements.accessCode.focus();
+    return;
+  }
+
   state.accessCode = code;
   localStorage.setItem("ace26-access-code", state.accessCode);
-  elements.accessHelp.textContent = "Access code saved for this browser.";
+  elements.accessHelp.textContent = "Access code accepted.";
   hideAccessGate();
   focusFirstStepPrompt();
+}
+
+async function validateAccessCode(code) {
+  if (!state.accessRequired) {
+    return true;
+  }
+
+  try {
+    await apiPost("/api/access/validate", {}, { accessCode: code, timeoutMs: 20000 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function showAccessGate() {
@@ -1661,8 +1702,9 @@ async function apiGet(path) {
 
 async function apiPost(path, body, options = {}) {
   const headers = { "Content-Type": "application/json" };
-  if (state.accessCode) {
-    headers["X-Workshop-Access-Code"] = state.accessCode;
+  const accessCode = options.accessCode ?? state.accessCode;
+  if (accessCode) {
+    headers["X-Workshop-Access-Code"] = accessCode;
   }
 
   const timeoutMs = options.timeoutMs || 120000;
