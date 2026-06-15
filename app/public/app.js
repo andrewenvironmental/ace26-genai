@@ -782,13 +782,13 @@ function bindEvents() {
 
 async function sendPrompt(prompt, taskRef = null) {
   setBusy(true);
-  if (taskRef) {
-    state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
-    renderActivity();
-  }
-  updateSettingsSummary();
-
   try {
+    if (taskRef) {
+      state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
+      renderActivity();
+    }
+    updateSettingsSummary();
+
     const response = await requestChat(prompt);
 
     applyEffectiveReasoning(response.reasoningEffort);
@@ -846,23 +846,28 @@ function systemPromptFromSettings(settings = null) {
 
 async function runComparisonPrompt(activity, task, taskIndex, prompt) {
   const key = taskKey(activity.id, taskIndex);
-  state.pendingTask = { activityId: activity.id, taskIndex };
   setBusy(true);
-  state.cellOutputs[key] = {
-    comparison: true,
-    pending: true,
-    prompt,
-    variants: task.actions.map((action) => ({
-      label: action.label,
-      pending: true,
-      settings: stepSetupItems({ ...(activity.settings || {}), ...action })
-    }))
-  };
-  renderActivity();
-
   try {
+    state.pendingTask = { activityId: activity.id, taskIndex };
+    const actions = Array.isArray(task.actions) ? task.actions : [];
+    if (!actions.length) {
+      throw new Error("Comparison setup is missing. Reload the page and try again.");
+    }
+
+    state.cellOutputs[key] = {
+      comparison: true,
+      pending: true,
+      prompt,
+      variants: actions.map((action) => ({
+        label: action.label,
+        pending: true,
+        settings: stepSetupItems({ ...(activity.settings || {}), ...action })
+      }))
+    };
+    renderActivity();
+
     const results = await Promise.all(
-      task.actions.map((action, index) => runComparisonVariant(activity, action, key, index, prompt))
+      actions.map((action, index) => runComparisonVariant(activity, action, key, index, prompt))
     );
     const lastSuccessful = [...results].reverse().find((result) => result?.sources);
     state.latestSources = lastSuccessful?.sources || [];
@@ -873,6 +878,12 @@ async function runComparisonPrompt(activity, task, taskIndex, prompt) {
     state.cellOutputs[key].pending = false;
     state.pendingTask = null;
     markTask(activity.id, taskIndex, true);
+  } catch (error) {
+    state.cellOutputs[key] = {
+      prompt,
+      error: error.message || "Comparison failed to start."
+    };
+    state.pendingTask = null;
   } finally {
     setBusy(false);
     renderActivity();

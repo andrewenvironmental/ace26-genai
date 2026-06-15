@@ -21,11 +21,3 @@ Do not commit service endpoints, keys, tenant-specific values, or participant da
 ## Documentation Map
 
 Start with `docs/README.md` for the current documentation index and `docs/repo-organization.md` for repo organization recommendations.
-
-## Contingency Notebook
-
-The Colab/Jupyter notebook is retained as a last-resort offline continuity path, not the primary workshop experience. Use it only when the Azure-hosted web lab cannot support the room.
-
-- Runbook: `docs/colab-fallback.md`
-- Notebook notes: `notebooks/README.md`
-- Notebook file: `notebooks/ace26-chat-playground-backup.ipynb`
