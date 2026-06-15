@@ -263,9 +263,44 @@ input[type="number"] {
 .task-action,
 .secondary-button,
 .ghost-button,
-.text-button {
+.text-button,
+.primary-button {
   border-radius: 7px;
   min-height: 34px;
+}
+
+.primary-button {
+  background: var(--blue);
+  border: 1px solid var(--blue);
+  color: #ffffff;
+  font-weight: 650;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-button:hover {
+  background: #1e4b85;
+}
+
+@keyframes pulse-attention {
+  0% { box-shadow: 0 0 0 0 rgba(36, 94, 168, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(36, 94, 168, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(36, 94, 168, 0); }
+}
+
+.pulse-button {
+  animation: pulse-attention 2s infinite;
+}
+
+.intro-cta {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0 20px;
+}
+.intro-cta .primary-button {
+  padding: 12px 24px;
+  font-size: 1.05rem;
 }
 
 .preset-button,
@@ -275,6 +310,12 @@ input[type="number"] {
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--ink);
+}
+
+.preset-button.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
 }
 
 .preset-button,
@@ -378,6 +419,33 @@ input[type="number"] {
   font-size: 0.9rem;
   line-height: 1.35;
   margin: 5px 0 0;
+}
+
+.activity-learn {
+  background: var(--green-soft);
+  border: 1px solid #a8d9bf;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.activity-learn-heading {
+  color: var(--green);
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.activity-learn ul {
+  color: #2a4d3e;
+  display: grid;
+  font-size: 0.86rem;
+  gap: 4px;
+  line-height: 1.4;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .activity-progress {
@@ -538,12 +606,37 @@ input[type="number"] {
 }
 
 .task-action {
-  align-items: center;
-  border-color: #c8d8dd;
+  align-items: flex-start;
+  background: var(--blue-soft);
+  border-color: #9bbee0;
+  border-width: 1.5px;
   color: var(--blue);
   display: inline-flex;
-  gap: 7px;
-  min-height: 32px;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 36px;
+  font-size: 0.88rem;
+  padding: 7px 11px;
+}
+
+.task-action-label {
+  font-weight: 700;
+}
+
+.task-action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.task-action-chip {
+  background: rgba(36, 94, 168, 0.1);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.85;
+  padding: 1px 7px;
+  text-transform: uppercase;
 }
 
 .task-action.active {
@@ -821,6 +914,54 @@ th {
   width: 100%;
 }
 
+.setup-section {
+  border: 2px solid var(--blue);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.setup-section-header {
+  align-items: center;
+  background: var(--blue);
+  display: flex;
+  gap: 12px;
+  padding: 8px 14px;
+}
+
+.setup-section-label {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.setup-section-hint {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.78rem;
+}
+
+.setup-section > .settings-card {
+  border: none;
+  border-radius: 0;
+}
+
+.intro-footer {
+  align-items: center;
+  border-top: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 0 8px;
+  text-align: center;
+}
+
+.intro-footer-hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
 .settings-card,
 .activity-panel,
 .run-context {
@@ -841,11 +982,41 @@ th {
 
 .manual-settings > summary {
   align-items: center;
+  background: var(--blue-soft);
+  border-radius: 6px;
+  color: var(--blue);
   cursor: pointer;
   display: flex;
   font-weight: 700;
+  gap: 8px;
   justify-content: space-between;
   list-style: none;
+  padding: 9px 12px;
+  transition: background 0.15s;
+}
+
+.manual-settings > summary:hover {
+  background: #d8eafc;
+}
+
+.manual-settings > summary::after {
+  content: "▼ Click to expand";
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.manual-settings[open] > summary {
+  background: #e8f0f8;
+  border-bottom: 1px solid #b9d1ee;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  color: var(--blue);
+}
+
+.manual-settings[open] > summary::after {
+  content: "▲ collapse";
 }
 
 .manual-settings > summary::-webkit-details-marker {
@@ -879,7 +1050,37 @@ th {
   padding-top: 10px;
 }
 
-.instructions-drawer summary,
+.instructions-drawer summary {
+  align-items: center;
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font-weight: 700;
+  justify-content: space-between;
+  list-style: none;
+  padding: 7px 12px;
+  transition: background 0.15s;
+}
+
+.instructions-drawer summary:hover {
+  background: #e8eef0;
+}
+
+.instructions-drawer summary::after {
+  content: "▼ edit";
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.instructions-drawer[open] summary::after {
+  content: "▲ close";
+}
+
 .run-context summary {
   align-items: center;
   color: var(--ink);
@@ -954,14 +1155,31 @@ th {
   margin-bottom: 2px;
 }
 
+.task-actions-hint {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-style: italic;
+  width: 100%;
+}
+
 .cell-prompt-label {
-  font-size: 0.78rem;
+  color: var(--ink);
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
 .cell-prompt {
-  min-height: 78px;
+  background: #fff;
+  border-color: #a8c9e8;
+  border-width: 1.5px;
+  font-size: 0.95rem;
+  min-height: 88px;
   resize: vertical;
+}
+
+.cell-prompt:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(36, 94, 168, 0.15);
 }
 
 .step-settings {
@@ -1143,11 +1361,19 @@ th {
   background: var(--green);
   border: 0;
   border-radius: 7px;
+  box-shadow: 0 2px 8px rgba(29, 115, 86, 0.35);
   color: #fff;
   flex: 0 0 auto;
+  font-size: 0.95rem;
   font-weight: 700;
-  min-height: 36px;
-  padding: 0 16px;
+  min-height: 40px;
+  padding: 0 20px;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.run-step-button:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(29, 115, 86, 0.45);
+  transform: translateY(-1px);
 }
 
 .run-step-button:disabled {

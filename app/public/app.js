@@ -16,6 +16,11 @@ const activities = [
     title: "How This Lab Works",
     summary: "Before you run prompts, learn what changes from step to step and how to compare results.",
     infoOnly: true,
+    learn: [
+      "How each step changes what gets sent to the model",
+      "What the Step Setup controls and why it matters",
+      "How to tell a useful AI response from a risky one"
+    ],
     tasks: [
       {
         title: "What changes as you move through the lab",
@@ -57,6 +62,11 @@ const activities = [
     kicker: "Part 1",
     title: "Use the Workshop Playground",
     summary: "Send a baseline prompt, then use instructions and prompt constraints to shape the answer.",
+    learn: [
+      "How prompt wording affects the tone, length, and detail of the answer",
+      "How system instructions change the assistant's role and audience",
+      "How to format output for different use cases: bullets, social posts, audience levels"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -136,6 +146,11 @@ const activities = [
     kicker: "Part 2",
     title: "Adjust Model Settings",
     summary: "Change response budget and reasoning effort, then compare speed, detail, and usefulness.",
+    learn: [
+      "What the token budget controls and when it matters",
+      "How reasoning effort affects response quality and speed",
+      "Why prompt-level instructions often work better than token limits alone"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -193,6 +208,11 @@ const activities = [
     kicker: "Part 3",
     title: "Knowledge Limits",
     summary: "Ask questions that need current or organization-specific verification.",
+    learn: [
+      "Why AI models can confidently answer questions they cannot actually know",
+      "How to identify claims that require primary-source verification",
+      "What kinds of questions are highest risk for public infrastructure use"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -253,6 +273,11 @@ const activities = [
     kicker: "Part 4",
     title: "Ground Responses With Documents",
     summary: "Attach the workshop document index and inspect the retrieved snippets behind the answer.",
+    learn: [
+      "How Retrieval-Augmented Generation (RAG) works in practice",
+      "How to tell if an answer is supported by the retrieved document snippets",
+      "When grounded answers are more trustworthy than general model knowledge"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceHint: "documents",
@@ -308,6 +333,11 @@ const activities = [
     kicker: "Part 5",
     title: "Safety And Guardrails",
     summary: "Use instructions to constrain scope, then test whether the assistant stays inside it.",
+    learn: [
+      "How to write a system instruction that constrains the assistant's scope",
+      "How to test whether a guardrail actually holds",
+      "Why guardrails still require human review before publishing AI-assisted content"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -346,6 +376,11 @@ const activities = [
     kicker: "Wrap Up",
     title: "Compare And Discuss",
     summary: "Capture what changed when you adjusted instructions, model settings, and document grounding.",
+    learn: [
+      "How to summarize what changed across the lab exercises",
+      "How to draft practical guardrails your organization could adopt",
+      "What questions to bring back to your team after this workshop"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -550,6 +585,7 @@ const elements = {
   accessHelp: document.querySelector("#access-help"),
   activityKicker: document.querySelector("#activity-kicker"),
   activityNav: document.querySelector("#activity-nav"),
+  activityLearn: document.querySelector("#activity-learn"),
   activityProgress: document.querySelector("#activity-progress"),
   activityProgressBar: document.querySelector("#activity-progress-bar"),
   activitySummary: document.querySelector("#activity-summary"),
@@ -573,7 +609,9 @@ const elements = {
   sourceCount: document.querySelector("#source-count"),
   sourceTop: document.querySelector("#source-top"),
   sources: document.querySelector("#sources"),
-  usageSummary: document.querySelector("#usage-summary")
+  usageSummary: document.querySelector("#usage-summary"),
+  activityProgressWidget: document.querySelector(".activity-progress"),
+  introFooter: document.querySelector("#intro-footer")
 };
 
 init();
@@ -590,6 +628,7 @@ async function init() {
     elements.appTitle.textContent = workshopDisplayName;
     document.title = workshopDisplayName;
     elements.instructions.value = instructionPresets.default;
+    syncPresetButtons();
     await configureAccessGate(config.access);
 
     populateModels(config.models || []);
@@ -628,6 +667,14 @@ function bindEvents() {
   });
 
   elements.activityTasks.addEventListener("click", async (event) => {
+    const startWorkshopBtn = event.target.closest("[data-start-workshop]");
+    if (startWorkshopBtn) {
+      state.activeActivityId = "prompting";
+      renderActivityNav();
+      renderActivity();
+      return;
+    }
+
     const runButton = event.target.closest("[data-run-task]");
     const actionButton = event.target.closest("[data-action-index]");
     const activity = currentActivity();
@@ -682,7 +729,7 @@ function bindEvents() {
     state.preparedActions = {};
     renderActivity();
     renderSources();
-    elements.usageSummary.textContent = "Ready";
+    if (elements.usageSummary) elements.usageSummary.textContent = "Ready";
     focusFirstStepPrompt();
   });
 
@@ -713,6 +760,8 @@ function bindEvents() {
       applyInstructionsPreset(button.dataset.preset);
     });
   });
+
+  elements.instructions.addEventListener("input", syncPresetButtons);
 
   [elements.modelSelect, elements.dataSourceSelect, elements.reasoningEffort, elements.maxTokens, elements.sourceTop].forEach(
     (control) => {
@@ -763,7 +812,7 @@ async function sendPrompt(prompt, taskRef = null) {
       };
       renderActivity();
     }
-    elements.usageSummary.textContent = "Failed";
+    if (elements.usageSummary) elements.usageSummary.textContent = "Failed";
     if (state.accessRequired && (error.status === 401 || error.status === 403)) {
       state.accessCode = "";
       localStorage.removeItem("ace26-access-code");
@@ -819,7 +868,7 @@ async function runComparisonPrompt(activity, task, taskIndex, prompt) {
     state.latestSources = lastSuccessful?.sources || [];
     renderSources();
     if (!lastSuccessful) {
-      elements.usageSummary.textContent = "Comparison complete";
+      if (elements.usageSummary) elements.usageSummary.textContent = "Comparison complete";
     }
     state.cellOutputs[key].pending = false;
     state.pendingTask = null;
@@ -1036,6 +1085,17 @@ function renderActivity() {
   elements.activityKicker.textContent = activity.kicker;
   elements.activityTitle.textContent = activity.title;
   elements.activitySummary.textContent = activity.summary;
+  if (elements.activityLearn) {
+    if (activity.learn?.length) {
+      elements.activityLearn.hidden = false;
+      elements.activityLearn.innerHTML = `
+        <strong class="activity-learn-heading">What you\'ll learn</strong>
+        <ul>${activity.learn.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      `;
+    } else {
+      elements.activityLearn.hidden = true;
+    }
+  }
   renderTaskProgress(activity);
 
   elements.activityTasks.innerHTML = activity.tasks
@@ -1052,7 +1112,7 @@ function renderActivity() {
       const preparedActionIndex = state.preparedActions[key];
       const prepared = active || preparedActionIndex !== undefined;
       const stateLabel = output?.pending ? "Running" : complete ? "Complete" : prepared ? "Prompt prepared" : "Not run yet";
-      const actions = renderTaskActions(task, taskIndex, preparedActionIndex, complete);
+      const actions = renderTaskActions(task, taskIndex, preparedActionIndex, complete, activity);
 
       return `
         <article class="task-item ${complete ? "complete" : ""} ${active ? "active" : ""}">
@@ -1066,22 +1126,44 @@ function renderActivity() {
               <p>${escapeHtml(task.detail)}</p>
             </div>
           </div>
-          <div class="task-actions">${actions}</div>
+          <div class="task-actions">
+            ${task.actions?.length && !task.comparison ? `<span class="task-actions-hint">Optional: load a suggested setup</span>` : ""}
+            ${actions}
+          </div>
           ${renderStepSetup(activity, task, preparedActionIndex)}
-          <label class="cell-prompt-label" for="cell-prompt-${escapeHtml(key)}">Prompt</label>
-          <textarea id="cell-prompt-${escapeHtml(key)}" class="cell-prompt" data-cell-prompt="${escapeHtml(key)}" rows="3">${escapeHtml(prompt)}</textarea>
+          <label class="cell-prompt-label" for="cell-prompt-${escapeHtml(key)}">Your question</label>
+          <textarea id="cell-prompt-${escapeHtml(key)}" class="cell-prompt" placeholder="Type your question here, or load one from a suggested setup above&hellip;" data-cell-prompt="${escapeHtml(key)}" rows="3">${escapeHtml(prompt)}</textarea>
           <div class="cell-footer">
             <span>${escapeHtml(task.comparison ? comparisonRunCaption(activity, task) : stepRunCaption(activity, task, preparedActionIndex))}</span>
-            <button class="run-step-button" type="button" data-run-task="${taskIndex}"${state.busy ? " disabled" : ""}>${output?.pending ? "Running" : task.comparison ? "Run comparison" : "Run this step"}</button>
+            <button class="run-step-button" type="button" data-run-task="${taskIndex}"${state.busy ? " disabled" : ""}>${output?.pending ? "Running\u2026" : task.comparison ? "Run comparison" : "Send \u2192"}</button>
           </div>
           ${renderCellOutput(output, task)}
         </article>
       `;
     })
     .join("");
+
+  if (elements.introFooter) {
+    if (activity.id === "intro") {
+      elements.introFooter.hidden = false;
+      elements.introFooter.innerHTML = `
+        <p class="intro-footer-hint">Read the orientation above, then use <strong>Step Setup</strong> below to configure your model before starting.</p>
+        <button class="primary-button pulse-button" type="button" data-start-workshop>Start Part 1: Playground &rarr;</button>
+      `;
+      elements.introFooter.querySelector("[data-start-workshop]").addEventListener("click", () => {
+        state.activeActivityId = "prompting";
+        renderActivityNav();
+        renderActivity();
+      });
+    } else {
+      elements.introFooter.hidden = true;
+      elements.introFooter.innerHTML = "";
+    }
+  }
 }
 
 function renderInfoTask(task, taskIndex) {
+  const reflection = task.afterRun || (task.body || task.questions?.length ? { body: task.body, questions: task.questions } : null);
   return `
     <article class="task-item info-task">
       <div class="task-heading">
@@ -1091,12 +1173,12 @@ function renderInfoTask(task, taskIndex) {
           <p>${escapeHtml(task.detail)}</p>
         </div>
       </div>
-      ${renderReflection(task.afterRun || task)}
+      ${renderReflection(reflection)}
     </article>
   `;
 }
 
-function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
+function renderTaskActions(task, taskIndex, preparedActionIndex, complete, activity) {
   if (task.comparison) {
     return task.actions
       .map((action) => `<span class="task-action variation-chip">${escapeHtml(action.label)}</span>`)
@@ -1106,9 +1188,17 @@ function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
   return task.actions
     .map((action, actionIndex) => {
       const selected = preparedActionIndex === actionIndex;
+      const settings = { ...(activity?.settings || {}), ...action };
+      const model = modelLabelFromSettings(settings);
+      const reasoning = reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value);
+      const grounding = dataSourceLabelFromSettings(settings);
+      const instructions = instructionInfoFromSettings(settings);
+      const chips = [model, reasoning, grounding !== "No grounding" ? grounding : null, instructions.label !== "Workshop" ? `Instructions: ${instructions.label}` : null]
+        .filter(Boolean);
       return `
         <button class="task-action ${complete && selected ? "complete" : ""} ${selected && !complete ? "active" : ""}" type="button" data-task-index="${taskIndex}" data-action-index="${actionIndex}" aria-pressed="${selected ? "true" : "false"}">
-          <span>${escapeHtml(action.label)}</span>
+          <span class="task-action-label">${escapeHtml(action.label)}</span>
+          <span class="task-action-chips">${chips.map((c) => `<span class="task-action-chip">${escapeHtml(c)}</span>`).join("")}</span>
           ${selected ? '<span class="action-state">Selected</span>' : ""}
         </button>
       `;
@@ -1327,9 +1417,10 @@ function renderReflection(reflection) {
 }
 
 function renderTaskProgress(activity) {
+  if (elements.activityProgressWidget) {
+    elements.activityProgressWidget.hidden = !!activity.infoOnly;
+  }
   if (activity.infoOnly) {
-    elements.activityProgress.textContent = "Start here";
-    elements.activityProgressBar.style.width = "0%";
     return;
   }
 
@@ -1472,6 +1563,7 @@ function trimSource(source) {
 }
 
 function renderSources() {
+  if (!elements.sourceCount || !elements.sources) return;
   elements.sourceCount.textContent = String(state.latestSources.length);
   if (!state.latestSources.length) {
     elements.sources.className = "sources empty-state";
@@ -1499,6 +1591,7 @@ function renderSources() {
 }
 
 function renderUsage(response) {
+  if (!elements.usageSummary) return;
   const usage = response.usage;
   if (!usage) {
     elements.usageSummary.textContent = "Complete";
@@ -1510,6 +1603,7 @@ function renderUsage(response) {
 }
 
 function updateSettingsSummary() {
+  if (!elements.settingsSummary) return;
   const source = selectedDataSource();
   const model = selectedModel();
   elements.settingsSummary.innerHTML = `
@@ -1608,6 +1702,16 @@ function applyInstructionsPreset(name) {
   if (instructionPresets[name]) {
     elements.instructions.value = instructionPresets[name];
   }
+  syncPresetButtons();
+}
+
+function syncPresetButtons() {
+  const current = elements.instructions?.value || "";
+  elements.presetButtons.forEach((btn) => {
+    const match = instructionPresets[btn.dataset.preset] === current;
+    btn.classList.toggle("active", match);
+    btn.setAttribute("aria-pressed", match ? "true" : "false");
+  });
 }
 
 function selectModelByHint(hint) {
