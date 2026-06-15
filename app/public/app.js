@@ -184,20 +184,23 @@ const activities = [
       },
       {
         title: "2c. Compare reasoning settings",
-        detail: "Run the same filtration question with minimal reasoning and the model default. Compare the outputs side by side before deciding whether the setting mattered.",
+        detail:
+          "Run the same utility planning question with minimal reasoning and the model default. Compare how each response handles assumptions, tradeoffs, and a concrete action plan.",
         comparison: true,
         actions: [
           {
             label: "Minimal reasoning",
             modelHint: "mini",
             reasoningEffort: "minimal",
-            prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
+            prompt:
+              "You are advising a midsize water utility that must reduce non-revenue water by 20% in 12 months with a limited budget and no staffing increase. Propose a prioritized 90-day plan with exactly five actions. For each action include expected impact (high/medium/low), implementation risk (high/medium/low), and one measurable KPI. End with two assumptions that, if wrong, would change your plan."
           },
           {
             label: "Default reasoning",
             modelHint: "mini",
             reasoningEffort: "",
-            prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
+            prompt:
+              "You are advising a midsize water utility that must reduce non-revenue water by 20% in 12 months with a limited budget and no staffing increase. Propose a prioritized 90-day plan with exactly five actions. For each action include expected impact (high/medium/low), implementation risk (high/medium/low), and one measurable KPI. End with two assumptions that, if wrong, would change your plan."
           }
         ]
       }
@@ -470,7 +473,7 @@ const stepReflections = {
   "2c. Compare reasoning settings": {
     title: "What changed",
     body:
-      "Both runs used the same prompt and model, but changed the reasoning setting. If the answers are similar, the extra setting may not matter for this simple question.",
+      "Both runs used the same prompt and model, but changed the reasoning setting. This prompt is intentionally multi-constraint, so compare structure quality, prioritization logic, and how explicitly assumptions are handled.",
     questions: ["Which answer is clearer or more complete?", "Did the default setting add enough value to use it for similar prompts?"]
   },
   "3a. Test a not-yet-knowable fact": {
