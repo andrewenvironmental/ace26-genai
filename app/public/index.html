@@ -53,34 +53,17 @@
               <div class="progress-meter" aria-hidden="true"><span id="activity-progress-bar"></span></div>
             </div>
           </div>
+          <div id="activity-learn" class="activity-learn" hidden></div>
           <div id="activity-tasks" class="activity-tasks"></div>
         </section>
 
-        <details class="run-context">
-          <summary>
-            <span>Last run context</span>
-            <span id="usage-summary">Ready</span>
-          </summary>
-          <div class="run-context-grid">
-            <section>
-              <div class="section-title">
-                <h2>Sources</h2>
-                <span id="source-count">0</span>
-              </div>
-              <p class="source-explainer">Retrieved snippets are added to the model context for grounded answers.</p>
-              <div id="sources" class="sources empty-state">No retrieved sources yet.</div>
-            </section>
-            <section>
-              <div class="section-title">
-                <h2>Run Settings</h2>
-              </div>
-              <div id="settings-summary" class="settings-summary"></div>
-            </section>
+        <div class="setup-section">
+          <div class="setup-section-header">
+            <span class="setup-section-label">Step Setup</span>
+            <span class="setup-section-hint">Configure the model, reasoning, and instructions before running each step</span>
           </div>
-        </details>
-
-        <details class="settings-card manual-settings" aria-label="Manual model, instructions, and grounding settings">
-          <summary>Manual run controls</summary>
+          <details class="settings-card manual-settings" aria-label="Manual model, instructions, and grounding settings">
+            <summary>Manual run controls</summary>
           <div class="manual-settings-body">
             <div class="settings-grid">
               <div class="setting-field wide">
@@ -130,6 +113,10 @@
             </details>
           </div>
         </details>
+        </div>
+
+        <div id="intro-footer" class="intro-footer" hidden></div>
+
       </main>
     </div>
 

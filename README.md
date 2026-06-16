@@ -22,10 +22,7 @@ Do not commit service endpoints, keys, tenant-specific values, or participant da
 
 Start with `docs/README.md` for the current documentation index and `docs/repo-organization.md` for repo organization recommendations.
 
-## Contingency Notebook
 
-The Colab/Jupyter notebook is retained as a last-resort offline continuity path, not the primary workshop experience. Use it only when the Azure-hosted web lab cannot support the room.
+## To build in docker
 
-- Runbook: `docs/colab-fallback.md`
-- Notebook notes: `notebooks/README.md`
-- Notebook file: `notebooks/ace26-chat-playground-backup.ipynb`
+docker build -t ace26-playground:test . ;  2>$null; docker run -d --name ace26-playground-test -p 8080:8080 --env-file c:\Github\ace26-genai\.env -e NODE_ENV=production -e PUBLIC_API_ACCESS_MODE=code -e WORKSHOP_ACCESS_CODE= ********** ace26-playground:test

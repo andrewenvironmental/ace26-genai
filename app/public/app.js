@@ -9,6 +9,12 @@ const instructionPresets = {
 
 const workshopDisplayName = "ACE26 AI Pre-conference Workshop";
 
+const legacyReasoningComparisonPrompts = new Set([
+  "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?",
+  "You are advising a midsize water utility trying to reduce non-revenue water (NRW). Build a 90-day portfolio using exactly 5 actions from the list below. Constraints: total budget <= $900k, no additional headcount, and at most 2 high-complexity actions. Data: (1) District metering: cost $180k, expected NRW reduction 2.2 points, complexity medium. (2) Pressure optimization: $140k, 1.4 points, medium. (3) Acoustic leak detection sweep: $220k, 2.8 points, high. (4) Customer meter replacement blitz: $260k, 2.0 points, high. (5) SCADA alarm tuning: $90k, 0.9 points, low. (6) Illegal connection amnesty + inspection: $120k, 1.1 points, medium. (7) Night-flow analytics: $80k, 0.8 points, low. (8) Rapid repair contractor framework: $240k, 2.3 points, high. Output format: a ranked table with the 5 selected actions, totals for cost and reduction points, then a 30/60/90 timeline, then 3 key risks with mitigations, then 2 assumptions that could invalidate the plan.",
+  "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 220 words. Output only these sections: Selected actions, Totals and constraint check, Why the next-best excluded action was left out, One risk to monitor."
+]);
+
 const activities = [
   {
     id: "intro",
@@ -16,6 +22,11 @@ const activities = [
     title: "How This Lab Works",
     summary: "Before you run prompts, learn what changes from step to step and how to compare results.",
     infoOnly: true,
+    learn: [
+      "How each step changes what gets sent to the model",
+      "What the Step Setup controls and why it matters",
+      "How to tell a useful AI response from a risky one"
+    ],
     tasks: [
       {
         title: "What changes as you move through the lab",
@@ -57,6 +68,11 @@ const activities = [
     kicker: "Part 1",
     title: "Use the Workshop Playground",
     summary: "Send a baseline prompt, then use instructions and prompt constraints to shape the answer.",
+    learn: [
+      "How prompt wording affects the tone, length, and detail of the answer",
+      "How system instructions change the assistant's role and audience",
+      "How to format output for different use cases: bullets, social posts, audience levels"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -136,6 +152,11 @@ const activities = [
     kicker: "Part 2",
     title: "Adjust Model Settings",
     summary: "Change response budget and reasoning effort, then compare speed, detail, and usefulness.",
+    learn: [
+      "What the token budget controls and when it matters",
+      "How reasoning effort affects response quality and speed",
+      "Why prompt-level instructions often work better than token limits alone"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -169,20 +190,25 @@ const activities = [
       },
       {
         title: "2c. Compare reasoning settings",
-        detail: "Run the same filtration question with minimal reasoning and the model default. Compare the outputs side by side before deciding whether the setting mattered.",
+        detail:
+          "Run the same constrained planning question with minimal versus default reasoning. Watch whether each response respects the budget and complexity constraints — or ignores them.",
         comparison: true,
         actions: [
           {
             label: "Minimal reasoning",
             modelHint: "mini",
             reasoningEffort: "minimal",
-            prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
+            maxTokens: 1000,
+            prompt:
+              "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 200 words. Output only: Selected actions (ranked with cost and impact), Totals and constraint check, Why the highest-impact excluded action was left out, One risk to monitor."
           },
           {
             label: "Default reasoning",
             modelHint: "mini",
             reasoningEffort: "",
-            prompt: "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?"
+            maxTokens: 1000,
+            prompt:
+              "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 200 words. Output only: Selected actions (ranked with cost and impact), Totals and constraint check, Why the highest-impact excluded action was left out, One risk to monitor."
           }
         ]
       }
@@ -193,6 +219,11 @@ const activities = [
     kicker: "Part 3",
     title: "Knowledge Limits",
     summary: "Ask questions that need current or organization-specific verification.",
+    learn: [
+      "Why AI models can confidently answer questions they cannot actually know",
+      "How to identify claims that require primary-source verification",
+      "What kinds of questions are highest risk for public infrastructure use"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -253,6 +284,11 @@ const activities = [
     kicker: "Part 4",
     title: "Ground Responses With Documents",
     summary: "Attach the workshop document index and inspect the retrieved snippets behind the answer.",
+    learn: [
+      "How Retrieval-Augmented Generation (RAG) works in practice",
+      "How to tell if an answer is supported by the retrieved document snippets",
+      "When grounded answers are more trustworthy than general model knowledge"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceHint: "documents",
@@ -308,6 +344,11 @@ const activities = [
     kicker: "Part 5",
     title: "Safety And Guardrails",
     summary: "Use instructions to constrain scope, then test whether the assistant stays inside it.",
+    learn: [
+      "How to write a system instruction that constrains the assistant's scope",
+      "How to test whether a guardrail actually holds",
+      "Why guardrails still require human review before publishing AI-assisted content"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -346,6 +387,11 @@ const activities = [
     kicker: "Wrap Up",
     title: "Compare And Discuss",
     summary: "Capture what changed when you adjusted instructions, model settings, and document grounding.",
+    learn: [
+      "How to summarize what changed across the lab exercises",
+      "How to draft practical guardrails your organization could adopt",
+      "What questions to bring back to your team after this workshop"
+    ],
     settings: {
       modelHint: "mini",
       dataSourceId: "none",
@@ -435,8 +481,11 @@ const stepReflections = {
   "2c. Compare reasoning settings": {
     title: "What changed",
     body:
-      "Both runs used the same prompt and model, but changed the reasoning setting. If the answers are similar, the extra setting may not matter for this simple question.",
-    questions: ["Which answer is clearer or more complete?", "Did the default setting add enough value to use it for similar prompts?"]
+      "Both runs used the same model and prompt, but changed only the reasoning setting. Minimal reasoning sometimes skips constraint verification and picks a higher-impact but non-compliant portfolio. Default reasoning tends to check arithmetic and constraints more carefully before selecting.",
+    questions: [
+      "Did one response violate the budget or complexity cap?",
+      "Which response would you trust more before using it to make a real decision?"
+    ]
   },
   "3a. Test a not-yet-knowable fact": {
     title: "What happened",
@@ -550,6 +599,7 @@ const elements = {
   accessHelp: document.querySelector("#access-help"),
   activityKicker: document.querySelector("#activity-kicker"),
   activityNav: document.querySelector("#activity-nav"),
+  activityLearn: document.querySelector("#activity-learn"),
   activityProgress: document.querySelector("#activity-progress"),
   activityProgressBar: document.querySelector("#activity-progress-bar"),
   activitySummary: document.querySelector("#activity-summary"),
@@ -573,7 +623,9 @@ const elements = {
   sourceCount: document.querySelector("#source-count"),
   sourceTop: document.querySelector("#source-top"),
   sources: document.querySelector("#sources"),
-  usageSummary: document.querySelector("#usage-summary")
+  usageSummary: document.querySelector("#usage-summary"),
+  activityProgressWidget: document.querySelector(".activity-progress"),
+  introFooter: document.querySelector("#intro-footer")
 };
 
 init();
@@ -590,6 +642,7 @@ async function init() {
     elements.appTitle.textContent = workshopDisplayName;
     document.title = workshopDisplayName;
     elements.instructions.value = instructionPresets.default;
+    syncPresetButtons();
     await configureAccessGate(config.access);
 
     populateModels(config.models || []);
@@ -628,6 +681,14 @@ function bindEvents() {
   });
 
   elements.activityTasks.addEventListener("click", async (event) => {
+    const startWorkshopBtn = event.target.closest("[data-start-workshop]");
+    if (startWorkshopBtn) {
+      state.activeActivityId = "prompting";
+      renderActivityNav();
+      renderActivity();
+      return;
+    }
+
     const runButton = event.target.closest("[data-run-task]");
     const actionButton = event.target.closest("[data-action-index]");
     const activity = currentActivity();
@@ -682,7 +743,7 @@ function bindEvents() {
     state.preparedActions = {};
     renderActivity();
     renderSources();
-    elements.usageSummary.textContent = "Ready";
+    if (elements.usageSummary) elements.usageSummary.textContent = "Ready";
     focusFirstStepPrompt();
   });
 
@@ -714,6 +775,8 @@ function bindEvents() {
     });
   });
 
+  elements.instructions.addEventListener("input", syncPresetButtons);
+
   [elements.modelSelect, elements.dataSourceSelect, elements.reasoningEffort, elements.maxTokens, elements.sourceTop].forEach(
     (control) => {
       control.addEventListener("change", () => {
@@ -733,13 +796,13 @@ function bindEvents() {
 
 async function sendPrompt(prompt, taskRef = null) {
   setBusy(true);
-  if (taskRef) {
-    state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
-    renderActivity();
-  }
-  updateSettingsSummary();
-
   try {
+    if (taskRef) {
+      state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = { pending: true, prompt };
+      renderActivity();
+    }
+    updateSettingsSummary();
+
     const response = await requestChat(prompt);
 
     applyEffectiveReasoning(response.reasoningEffort);
@@ -763,7 +826,7 @@ async function sendPrompt(prompt, taskRef = null) {
       };
       renderActivity();
     }
-    elements.usageSummary.textContent = "Failed";
+    if (elements.usageSummary) elements.usageSummary.textContent = "Failed";
     if (state.accessRequired && (error.status === 401 || error.status === 403)) {
       state.accessCode = "";
       localStorage.removeItem("ace26-access-code");
@@ -797,33 +860,47 @@ function systemPromptFromSettings(settings = null) {
 
 async function runComparisonPrompt(activity, task, taskIndex, prompt) {
   const key = taskKey(activity.id, taskIndex);
-  state.pendingTask = { activityId: activity.id, taskIndex };
   setBusy(true);
-  state.cellOutputs[key] = {
-    comparison: true,
-    pending: true,
-    prompt,
-    variants: task.actions.map((action) => ({
-      label: action.label,
-      pending: true,
-      settings: stepSetupItems({ ...(activity.settings || {}), ...action })
-    }))
-  };
-  renderActivity();
-
   try {
-    const results = await Promise.all(
-      task.actions.map((action, index) => runComparisonVariant(activity, action, key, index, prompt))
-    );
+    state.pendingTask = { activityId: activity.id, taskIndex };
+    const actions = Array.isArray(task.actions) ? task.actions : [];
+    if (!actions.length) {
+      throw new Error("Comparison setup is missing. Reload the page and try again.");
+    }
+
+    state.cellOutputs[key] = {
+      comparison: true,
+      pending: true,
+      prompt,
+      variants: actions.map((action) => ({
+        label: action.label,
+        pending: true,
+        settings: stepSetupItems({ ...(activity.settings || {}), ...action })
+      }))
+    };
+    renderActivity();
+
+    const results = [];
+    for (let index = 0; index < actions.length; index += 1) {
+      const action = actions[index];
+      // Run variants in sequence to reduce transient fetch failures during long model calls.
+      results.push(await runComparisonVariant(activity, action, key, index, prompt));
+    }
     const lastSuccessful = [...results].reverse().find((result) => result?.sources);
     state.latestSources = lastSuccessful?.sources || [];
     renderSources();
     if (!lastSuccessful) {
-      elements.usageSummary.textContent = "Comparison complete";
+      if (elements.usageSummary) elements.usageSummary.textContent = "Comparison complete";
     }
     state.cellOutputs[key].pending = false;
     state.pendingTask = null;
     markTask(activity.id, taskIndex, true);
+  } catch (error) {
+    state.cellOutputs[key] = {
+      prompt,
+      error: error.message || "Comparison failed to start."
+    };
+    state.pendingTask = null;
   } finally {
     setBusy(false);
     renderActivity();
@@ -835,7 +912,17 @@ async function runComparisonVariant(activity, action, key, variantIndex, prompt)
   updateComparisonVariant(key, variantIndex, { pending: true });
 
   try {
-    const response = await requestChat(prompt, settings, { timeoutMs: 90000 });
+    let response;
+    try {
+      response = await requestChat(prompt, settings, { timeoutMs: 150000 });
+    } catch (error) {
+      if ((error.message || "").toLowerCase().includes("failed to fetch")) {
+        response = await requestChat(prompt, settings, { timeoutMs: 150000 });
+      } else {
+        throw error;
+      }
+    }
+
     updateComparisonVariant(key, variantIndex, {
       pending: false,
       response: response.message.content || "No response content returned.",
@@ -1036,6 +1123,17 @@ function renderActivity() {
   elements.activityKicker.textContent = activity.kicker;
   elements.activityTitle.textContent = activity.title;
   elements.activitySummary.textContent = activity.summary;
+  if (elements.activityLearn) {
+    if (activity.learn?.length) {
+      elements.activityLearn.hidden = false;
+      elements.activityLearn.innerHTML = `
+        <strong class="activity-learn-heading">What you\'ll learn</strong>
+        <ul>${activity.learn.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      `;
+    } else {
+      elements.activityLearn.hidden = true;
+    }
+  }
   renderTaskProgress(activity);
 
   elements.activityTasks.innerHTML = activity.tasks
@@ -1052,7 +1150,7 @@ function renderActivity() {
       const preparedActionIndex = state.preparedActions[key];
       const prepared = active || preparedActionIndex !== undefined;
       const stateLabel = output?.pending ? "Running" : complete ? "Complete" : prepared ? "Prompt prepared" : "Not run yet";
-      const actions = renderTaskActions(task, taskIndex, preparedActionIndex, complete);
+      const actions = renderTaskActions(task, taskIndex, preparedActionIndex, complete, activity);
 
       return `
         <article class="task-item ${complete ? "complete" : ""} ${active ? "active" : ""}">
@@ -1066,22 +1164,44 @@ function renderActivity() {
               <p>${escapeHtml(task.detail)}</p>
             </div>
           </div>
-          <div class="task-actions">${actions}</div>
+          <div class="task-actions">
+            ${task.actions?.length && !task.comparison ? `<span class="task-actions-hint">Optional: load a suggested setup</span>` : ""}
+            ${actions}
+          </div>
           ${renderStepSetup(activity, task, preparedActionIndex)}
-          <label class="cell-prompt-label" for="cell-prompt-${escapeHtml(key)}">Prompt</label>
-          <textarea id="cell-prompt-${escapeHtml(key)}" class="cell-prompt" data-cell-prompt="${escapeHtml(key)}" rows="3">${escapeHtml(prompt)}</textarea>
+          <label class="cell-prompt-label" for="cell-prompt-${escapeHtml(key)}">Your question</label>
+          <textarea id="cell-prompt-${escapeHtml(key)}" class="cell-prompt" placeholder="Type your question here, or load one from a suggested setup above&hellip;" data-cell-prompt="${escapeHtml(key)}" rows="3">${escapeHtml(prompt)}</textarea>
           <div class="cell-footer">
             <span>${escapeHtml(task.comparison ? comparisonRunCaption(activity, task) : stepRunCaption(activity, task, preparedActionIndex))}</span>
-            <button class="run-step-button" type="button" data-run-task="${taskIndex}"${state.busy ? " disabled" : ""}>${output?.pending ? "Running" : task.comparison ? "Run comparison" : "Run this step"}</button>
+            <button class="run-step-button" type="button" data-run-task="${taskIndex}"${state.busy ? " disabled" : ""}>${output?.pending ? "Running\u2026" : task.comparison ? "Run comparison" : "Send \u2192"}</button>
           </div>
           ${renderCellOutput(output, task)}
         </article>
       `;
     })
     .join("");
+
+  if (elements.introFooter) {
+    if (activity.id === "intro") {
+      elements.introFooter.hidden = false;
+      elements.introFooter.innerHTML = `
+        <p class="intro-footer-hint">Read the orientation above, then use <strong>Step Setup</strong> below to configure your model before starting.</p>
+        <button class="primary-button pulse-button" type="button" data-start-workshop>Start Part 1: Playground &rarr;</button>
+      `;
+      elements.introFooter.querySelector("[data-start-workshop]").addEventListener("click", () => {
+        state.activeActivityId = "prompting";
+        renderActivityNav();
+        renderActivity();
+      });
+    } else {
+      elements.introFooter.hidden = true;
+      elements.introFooter.innerHTML = "";
+    }
+  }
 }
 
 function renderInfoTask(task, taskIndex) {
+  const reflection = task.afterRun || (task.body || task.questions?.length ? { body: task.body, questions: task.questions } : null);
   return `
     <article class="task-item info-task">
       <div class="task-heading">
@@ -1091,12 +1211,12 @@ function renderInfoTask(task, taskIndex) {
           <p>${escapeHtml(task.detail)}</p>
         </div>
       </div>
-      ${renderReflection(task.afterRun || task)}
+      ${renderReflection(reflection)}
     </article>
   `;
 }
 
-function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
+function renderTaskActions(task, taskIndex, preparedActionIndex, complete, activity) {
   if (task.comparison) {
     return task.actions
       .map((action) => `<span class="task-action variation-chip">${escapeHtml(action.label)}</span>`)
@@ -1106,9 +1226,17 @@ function renderTaskActions(task, taskIndex, preparedActionIndex, complete) {
   return task.actions
     .map((action, actionIndex) => {
       const selected = preparedActionIndex === actionIndex;
+      const settings = { ...(activity?.settings || {}), ...action };
+      const model = modelLabelFromSettings(settings);
+      const reasoning = reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value);
+      const grounding = dataSourceLabelFromSettings(settings);
+      const instructions = instructionInfoFromSettings(settings);
+      const chips = [model, reasoning, grounding !== "No grounding" ? grounding : null, instructions.label !== "Workshop" ? `Instructions: ${instructions.label}` : null]
+        .filter(Boolean);
       return `
         <button class="task-action ${complete && selected ? "complete" : ""} ${selected && !complete ? "active" : ""}" type="button" data-task-index="${taskIndex}" data-action-index="${actionIndex}" aria-pressed="${selected ? "true" : "false"}">
-          <span>${escapeHtml(action.label)}</span>
+          <span class="task-action-label">${escapeHtml(action.label)}</span>
+          <span class="task-action-chips">${chips.map((c) => `<span class="task-action-chip">${escapeHtml(c)}</span>`).join("")}</span>
           ${selected ? '<span class="action-state">Selected</span>' : ""}
         </button>
       `;
@@ -1327,9 +1455,10 @@ function renderReflection(reflection) {
 }
 
 function renderTaskProgress(activity) {
+  if (elements.activityProgressWidget) {
+    elements.activityProgressWidget.hidden = !!activity.infoOnly;
+  }
   if (activity.infoOnly) {
-    elements.activityProgress.textContent = "Start here";
-    elements.activityProgressBar.style.width = "0%";
     return;
   }
 
@@ -1349,9 +1478,20 @@ function defaultTaskPrompt(task) {
 
 function cellPrompt(activityId, taskIndex, task) {
   const key = taskKey(activityId, taskIndex);
+  const defaultPrompt = defaultTaskPrompt(task);
   if (state.cellPrompts[key] === undefined) {
-    state.cellPrompts[key] = defaultTaskPrompt(task);
+    state.cellPrompts[key] = defaultPrompt;
   }
+
+  if (
+    task.comparison &&
+    legacyReasoningComparisonPrompts.has(state.cellPrompts[key]) &&
+    defaultPrompt &&
+    !legacyReasoningComparisonPrompts.has(defaultPrompt)
+  ) {
+    state.cellPrompts[key] = defaultPrompt;
+  }
+
   return state.cellPrompts[key];
 }
 
@@ -1472,6 +1612,7 @@ function trimSource(source) {
 }
 
 function renderSources() {
+  if (!elements.sourceCount || !elements.sources) return;
   elements.sourceCount.textContent = String(state.latestSources.length);
   if (!state.latestSources.length) {
     elements.sources.className = "sources empty-state";
@@ -1499,6 +1640,7 @@ function renderSources() {
 }
 
 function renderUsage(response) {
+  if (!elements.usageSummary) return;
   const usage = response.usage;
   if (!usage) {
     elements.usageSummary.textContent = "Complete";
@@ -1510,6 +1652,7 @@ function renderUsage(response) {
 }
 
 function updateSettingsSummary() {
+  if (!elements.settingsSummary) return;
   const source = selectedDataSource();
   const model = selectedModel();
   elements.settingsSummary.innerHTML = `
@@ -1608,6 +1751,16 @@ function applyInstructionsPreset(name) {
   if (instructionPresets[name]) {
     elements.instructions.value = instructionPresets[name];
   }
+  syncPresetButtons();
+}
+
+function syncPresetButtons() {
+  const current = elements.instructions?.value || "";
+  elements.presetButtons.forEach((btn) => {
+    const match = instructionPresets[btn.dataset.preset] === current;
+    btn.classList.toggle("active", match);
+    btn.setAttribute("aria-pressed", match ? "true" : "false");
+  });
 }
 
 function selectModelByHint(hint) {
@@ -1708,24 +1861,32 @@ async function apiPost(path, body, options = {}) {
   }
 
   const timeoutMs = options.timeoutMs || 120000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const maxAttempts = options.retryOnNetworkError === false ? 1 : 2;
 
-  try {
-    const response = await fetch(path, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-    return parseApiResponse(response);
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("Request timed out. Try a narrower prompt, fewer snippets, or a faster model.");
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(path, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+      return parseApiResponse(response);
+    } catch (error) {
+      const message = String(error?.message || "").toLowerCase();
+      const isNetworkFailure = message.includes("failed to fetch") || message.includes("networkerror") || message.includes("empty_response");
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Try a narrower prompt, fewer snippets, or a faster model.");
+      }
+      if (!isNetworkFailure || attempt >= maxAttempts) {
+        throw error;
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
