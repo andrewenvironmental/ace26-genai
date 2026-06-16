@@ -711,6 +711,26 @@ input[type="number"] {
   overflow-wrap: anywhere;
 }
 
+.message-content .table-wrap,
+.comparison-result .message-content .table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.message-content table,
+.comparison-result .message-content table {
+  min-width: 740px;
+  table-layout: auto;
+}
+
+.message-content th,
+.message-content td,
+.comparison-result .message-content th,
+.comparison-result .message-content td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 .message-content p {
   margin: 0 0 10px;
 }
@@ -1242,6 +1262,11 @@ th {
 
 .comparison-settings .step-settings {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.comparison-result .step-settings {
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  overflow: visible;
 }
 
 .comparison-settings .step-settings div,

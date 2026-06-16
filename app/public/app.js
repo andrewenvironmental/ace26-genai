@@ -9,6 +9,12 @@ const instructionPresets = {
 
 const workshopDisplayName = "ACE26 AI Pre-conference Workshop";
 
+const legacyReasoningComparisonPrompts = new Set([
+  "What is the purpose of filtration at a wastewater treatment plant? How does this treatment process work?",
+  "You are advising a midsize water utility trying to reduce non-revenue water (NRW). Build a 90-day portfolio using exactly 5 actions from the list below. Constraints: total budget <= $900k, no additional headcount, and at most 2 high-complexity actions. Data: (1) District metering: cost $180k, expected NRW reduction 2.2 points, complexity medium. (2) Pressure optimization: $140k, 1.4 points, medium. (3) Acoustic leak detection sweep: $220k, 2.8 points, high. (4) Customer meter replacement blitz: $260k, 2.0 points, high. (5) SCADA alarm tuning: $90k, 0.9 points, low. (6) Illegal connection amnesty + inspection: $120k, 1.1 points, medium. (7) Night-flow analytics: $80k, 0.8 points, low. (8) Rapid repair contractor framework: $240k, 2.3 points, high. Output format: a ranked table with the 5 selected actions, totals for cost and reduction points, then a 30/60/90 timeline, then 3 key risks with mitigations, then 2 assumptions that could invalidate the plan.",
+  "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 220 words. Output only these sections: Selected actions, Totals and constraint check, Why the next-best excluded action was left out, One risk to monitor."
+]);
+
 const activities = [
   {
     id: "intro",
@@ -185,22 +191,24 @@ const activities = [
       {
         title: "2c. Compare reasoning settings",
         detail:
-          "Run the same utility planning question with minimal reasoning and the model default. Compare how each response handles assumptions, tradeoffs, and a concrete action plan.",
+          "Run the same constrained planning question with minimal versus default reasoning. Watch whether each response respects the budget and complexity constraints — or ignores them.",
         comparison: true,
         actions: [
           {
             label: "Minimal reasoning",
             modelHint: "mini",
             reasoningEffort: "minimal",
+            maxTokens: 1000,
             prompt:
-              "You are advising a midsize water utility that must reduce non-revenue water by 20% in 12 months with a limited budget and no staffing increase. Propose a prioritized 90-day plan with exactly five actions. For each action include expected impact (high/medium/low), implementation risk (high/medium/low), and one measurable KPI. End with two assumptions that, if wrong, would change your plan."
+              "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 200 words. Output only: Selected actions (ranked with cost and impact), Totals and constraint check, Why the highest-impact excluded action was left out, One risk to monitor."
           },
           {
             label: "Default reasoning",
             modelHint: "mini",
             reasoningEffort: "",
+            maxTokens: 1000,
             prompt:
-              "You are advising a midsize water utility that must reduce non-revenue water by 20% in 12 months with a limited budget and no staffing increase. Propose a prioritized 90-day plan with exactly five actions. For each action include expected impact (high/medium/low), implementation risk (high/medium/low), and one measurable KPI. End with two assumptions that, if wrong, would change your plan."
+              "You are advising a midsize water utility to reduce non-revenue water (NRW). Select exactly 4 actions under these constraints: total budget <= $650k, no new headcount, and at most 1 high-complexity action. Actions: A) District metering, cost 180, impact 2.2, complexity medium. B) Pressure optimization, cost 140, impact 1.4, medium. C) Acoustic leak sweep, cost 220, impact 2.8, high. D) SCADA alarm tuning, cost 90, impact 0.9, low. E) Illegal connection amnesty + inspection, cost 120, impact 1.1, medium. F) Rapid repair contractor framework, cost 240, impact 2.3, high. Keep the answer under 200 words. Output only: Selected actions (ranked with cost and impact), Totals and constraint check, Why the highest-impact excluded action was left out, One risk to monitor."
           }
         ]
       }
@@ -473,8 +481,11 @@ const stepReflections = {
   "2c. Compare reasoning settings": {
     title: "What changed",
     body:
-      "Both runs used the same prompt and model, but changed the reasoning setting. This prompt is intentionally multi-constraint, so compare structure quality, prioritization logic, and how explicitly assumptions are handled.",
-    questions: ["Which answer is clearer or more complete?", "Did the default setting add enough value to use it for similar prompts?"]
+      "Both runs used the same model and prompt, but changed only the reasoning setting. Minimal reasoning sometimes skips constraint verification and picks a higher-impact but non-compliant portfolio. Default reasoning tends to check arithmetic and constraints more carefully before selecting.",
+    questions: [
+      "Did one response violate the budget or complexity cap?",
+      "Which response would you trust more before using it to make a real decision?"
+    ]
   },
   "3a. Test a not-yet-knowable fact": {
     title: "What happened",
@@ -869,9 +880,12 @@ async function runComparisonPrompt(activity, task, taskIndex, prompt) {
     };
     renderActivity();
 
-    const results = await Promise.all(
-      actions.map((action, index) => runComparisonVariant(activity, action, key, index, prompt))
-    );
+    const results = [];
+    for (let index = 0; index < actions.length; index += 1) {
+      const action = actions[index];
+      // Run variants in sequence to reduce transient fetch failures during long model calls.
+      results.push(await runComparisonVariant(activity, action, key, index, prompt));
+    }
     const lastSuccessful = [...results].reverse().find((result) => result?.sources);
     state.latestSources = lastSuccessful?.sources || [];
     renderSources();
@@ -898,7 +912,17 @@ async function runComparisonVariant(activity, action, key, variantIndex, prompt)
   updateComparisonVariant(key, variantIndex, { pending: true });
 
   try {
-    const response = await requestChat(prompt, settings, { timeoutMs: 90000 });
+    let response;
+    try {
+      response = await requestChat(prompt, settings, { timeoutMs: 150000 });
+    } catch (error) {
+      if ((error.message || "").toLowerCase().includes("failed to fetch")) {
+        response = await requestChat(prompt, settings, { timeoutMs: 150000 });
+      } else {
+        throw error;
+      }
+    }
+
     updateComparisonVariant(key, variantIndex, {
       pending: false,
       response: response.message.content || "No response content returned.",
@@ -1454,9 +1478,20 @@ function defaultTaskPrompt(task) {
 
 function cellPrompt(activityId, taskIndex, task) {
   const key = taskKey(activityId, taskIndex);
+  const defaultPrompt = defaultTaskPrompt(task);
   if (state.cellPrompts[key] === undefined) {
-    state.cellPrompts[key] = defaultTaskPrompt(task);
+    state.cellPrompts[key] = defaultPrompt;
   }
+
+  if (
+    task.comparison &&
+    legacyReasoningComparisonPrompts.has(state.cellPrompts[key]) &&
+    defaultPrompt &&
+    !legacyReasoningComparisonPrompts.has(defaultPrompt)
+  ) {
+    state.cellPrompts[key] = defaultPrompt;
+  }
+
   return state.cellPrompts[key];
 }
 
@@ -1826,24 +1861,32 @@ async function apiPost(path, body, options = {}) {
   }
 
   const timeoutMs = options.timeoutMs || 120000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const maxAttempts = options.retryOnNetworkError === false ? 1 : 2;
 
-  try {
-    const response = await fetch(path, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-    return parseApiResponse(response);
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("Request timed out. Try a narrower prompt, fewer snippets, or a faster model.");
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(path, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+      return parseApiResponse(response);
+    } catch (error) {
+      const message = String(error?.message || "").toLowerCase();
+      const isNetworkFailure = message.includes("failed to fetch") || message.includes("networkerror") || message.includes("empty_response");
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Try a narrower prompt, fewer snippets, or a faster model.");
+      }
+      if (!isNetworkFailure || attempt >= maxAttempts) {
+        throw error;
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 

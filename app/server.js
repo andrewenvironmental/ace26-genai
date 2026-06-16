@@ -161,11 +161,11 @@ async function chat(body) {
     throw serviceError(response, responseBody, "Azure AI chat completion failed.");
   }
 
-  const choice = responseBody.choices?.[0]?.message;
+  const assistantText = extractChatCompletionText(responseBody);
   return {
     message: {
       role: "assistant",
-      content: choice?.content || ""
+      content: assistantText
     },
     sources,
     usage: responseBody.usage || null,
@@ -337,10 +337,12 @@ async function serveStatic(pathname, res) {
 
   try {
     const content = await readFile(filePath);
+    const extension = extname(filePath);
+    const noStoreExtensions = new Set([".html", ".js", ".css"]);
     res.writeHead(200, {
       ...securityHeaders(),
-      "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream",
-      "Cache-Control": extname(filePath) === ".html" ? "no-store" : "public, max-age=300"
+      "Content-Type": mimeTypes[extension] || "application/octet-stream",
+      "Cache-Control": noStoreExtensions.has(extension) ? "no-store" : "public, max-age=300"
     });
     res.end(content);
   } catch {
@@ -471,7 +473,12 @@ function toResponsesInputMessage(message) {
 
 function extractResponsesText(body) {
   if (body?.output_text) {
-    return body.output_text;
+    if (typeof body.output_text === "string") {
+      return body.output_text.trim();
+    }
+    if (Array.isArray(body.output_text)) {
+      return body.output_text.join("\n").trim();
+    }
   }
 
   if (!Array.isArray(body?.output)) {
@@ -480,10 +487,63 @@ function extractResponsesText(body) {
 
   return body.output
     .flatMap((item) => (Array.isArray(item?.content) ? item.content : []))
-    .map((content) => content?.text || "")
+    .map((content) => {
+      if (typeof content?.text === "string") {
+        return content.text;
+      }
+      if (typeof content?.output_text === "string") {
+        return content.output_text;
+      }
+      if (typeof content?.text?.value === "string") {
+        return content.text.value;
+      }
+      return "";
+    })
     .filter(Boolean)
     .join("\n")
     .trim();
+}
+
+function extractChatCompletionText(body) {
+  const message = body?.choices?.[0]?.message;
+  if (typeof message?.content === "string") {
+    return message.content.trim();
+  }
+
+  if (Array.isArray(message?.content)) {
+    const text = message.content
+      .map((part) => {
+        if (typeof part === "string") {
+          return part;
+        }
+        if (typeof part?.text === "string") {
+          return part.text;
+        }
+        if (typeof part?.output_text === "string") {
+          return part.output_text;
+        }
+        if (typeof part?.text?.value === "string") {
+          return part.text.value;
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    if (text) {
+      return text;
+    }
+  }
+
+  if (typeof message?.refusal === "string" && message.refusal.trim()) {
+    return message.refusal.trim();
+  }
+
+  if (typeof body?.output_text === "string" && body.output_text.trim()) {
+    return body.output_text.trim();
+  }
+
+  return "";
 }
 
 function normalizeResponsesUsage(usage) {

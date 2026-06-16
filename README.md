@@ -21,3 +21,8 @@ Do not commit service endpoints, keys, tenant-specific values, or participant da
 ## Documentation Map
 
 Start with `docs/README.md` for the current documentation index and `docs/repo-organization.md` for repo organization recommendations.
+
+
+## To build in docker
+
+docker build -t ace26-playground:test . ;  2>$null; docker run -d --name ace26-playground-test -p 8080:8080 --env-file c:\Github\ace26-genai\.env -e NODE_ENV=production -e PUBLIC_API_ACCESS_MODE=code -e WORKSHOP_ACCESS_CODE= ********** ace26-playground:test
