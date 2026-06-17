@@ -705,12 +705,6 @@ function bindEvents() {
         await runComparisonPrompt(activity, task, taskIndex, prompt);
         return;
       }
-      if (task.actions?.length && state.preparedActions[key] === undefined) {
-        const defaultActionIndex = 0;
-        applyAction(stepActionSettings(activity, task, defaultActionIndex), { keepPrompt: true });
-        state.preparedActions[key] = defaultActionIndex;
-        state.cellPrompts[key] = prompt;
-      }
       state.pendingTask = { activityId: activity.id, taskIndex };
       await sendPrompt(prompt, state.pendingTask);
       return;
@@ -836,6 +830,7 @@ async function sendPrompt(prompt, taskRef = null) {
     }
   } finally {
     setBusy(false);
+    renderActivity();
   }
 }
 
