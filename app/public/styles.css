@@ -1207,6 +1207,12 @@ th {
   border: 1px solid var(--line);
   border-radius: 7px;
   display: grid;
+
+.step-setup-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+}
   gap: 0;
   grid-template-columns: repeat(5, minmax(120px, 1fr));
   margin: 0;

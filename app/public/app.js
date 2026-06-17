@@ -809,7 +809,7 @@ async function sendPrompt(prompt, taskRef = null) {
     if (taskRef) {
       state.cellOutputs[taskKey(taskRef.activityId, taskRef.taskIndex)] = {
         prompt,
-        response: response.message.content || "No response content returned.",
+        response: assistantResponseText(response),
         sources: response.sources || [],
         usage: response.usage || null
       };
@@ -925,7 +925,7 @@ async function runComparisonVariant(activity, action, key, variantIndex, prompt)
 
     updateComparisonVariant(key, variantIndex, {
       pending: false,
-      response: response.message.content || "No response content returned.",
+      response: assistantResponseText(response),
       sources: response.sources || [],
       usage: response.usage || null
     });
@@ -1165,7 +1165,7 @@ function renderActivity() {
             </div>
           </div>
           <div class="task-actions">
-            ${task.actions?.length && !task.comparison ? `<span class="task-actions-hint">Optional: load a suggested setup</span>` : ""}
+            ${task.actions?.length && !task.comparison ? `<span class="task-actions-hint">Optional: load a suggested setup into global controls</span>` : ""}
             ${actions}
           </div>
           ${renderStepSetup(activity, task, preparedActionIndex)}
@@ -1268,9 +1268,29 @@ function renderStepSetup(activity, task, preparedActionIndex) {
     `;
   }
 
-  const action = task.actions[preparedActionIndex ?? 0] || {};
-  const settings = { ...(activity.settings || {}), ...action };
-  return `${renderStepSettingsList(stepSetupItems(settings))}${renderInstructionPreview(settings)}`;
+  const settings = currentControlSettings();
+  return `
+    <p class="step-setup-note">This run uses the current global controls shown in the setup panel.</p>
+    ${renderStepSettingsList(stepSetupItems(settings))}
+    ${renderInstructionPreview(settings)}
+  `;
+}
+
+function currentControlSettings() {
+  const settings = {
+    modelDeployment: elements.modelSelect.value,
+    reasoningEffort: elements.reasoningEffort.value,
+    maxTokens: Number(elements.maxTokens.value),
+    sourceTop: Number(elements.sourceTop.value),
+    dataSourceId: elements.dataSourceSelect.value
+  };
+
+  const instructions = instructionInfoFromSettings();
+  if (instructions.preset && instructions.preset !== "custom") {
+    settings.instructionsPreset = instructions.preset;
+  }
+
+  return settings;
 }
 
 function stepSetupItems(settings) {
@@ -1425,7 +1445,7 @@ function renderComparisonOutput(output, task = null) {
                   ? '<p class="pending-copy">Waiting for response...</p>'
                   : variant.error
                     ? `<div class="error-output"><strong>Request failed</strong><p>${escapeHtml(variant.error)}</p></div>`
-                    : `<div class="message-content">${formatMessage(variant.response || "No response content returned.")}</div>`
+                    : `<div class="message-content">${formatMessage(variant.response || emptyResponseMessage())}</div>`
               }
             </article>
           `
@@ -1523,13 +1543,7 @@ function currentRunCaption() {
 }
 
 function stepRunCaption(activity, task, preparedActionIndex) {
-  const action = task.actions[preparedActionIndex ?? 0] || {};
-  const settings = { ...(activity.settings || {}), ...action };
-  return [
-    modelLabelFromSettings(settings),
-    reasoningLabel(settings.reasoningEffort ?? elements.reasoningEffort.value),
-    dataSourceLabelFromSettings(settings)
-  ].join(" / ");
+  return currentRunCaption();
 }
 
 function comparisonRunCaption(activity, task) {
@@ -1649,6 +1663,37 @@ function renderUsage(response) {
 
   const total = usage.total_tokens || usage.totalTokens || usage.completion_tokens || "";
   elements.usageSummary.textContent = total ? `${total} tokens` : "Complete";
+}
+
+function assistantResponseText(response) {
+  const content = String(response?.message?.content || "").trim();
+  if (content) {
+    return content;
+  }
+
+  return emptyResponseMessage(response?.usage);
+}
+
+function emptyResponseMessage(usage = null) {
+  const completionTokens = Number(usage?.completion_tokens || usage?.output_tokens || 0);
+  const reasoningTokens = Number(usage?.completion_tokens_details?.reasoning_tokens || 0);
+
+  const diagnostic = reasoningTokens > 0
+    ? `The model spent ${reasoningTokens} completion tokens on reasoning before producing visible answer text.`
+    : completionTokens > 0
+      ? `The model used ${completionTokens} completion tokens but returned an empty answer body.`
+      : "The request completed, but the model returned an empty answer body.";
+
+  return [
+    "No visible text was returned by the model.",
+    "",
+    diagnostic,
+    "",
+    "Try again with:",
+    "- Higher Max tokens",
+    "- Lower reasoning effort",
+    "- A shorter, more specific prompt"
+  ].join("\n");
 }
 
 function updateSettingsSummary() {

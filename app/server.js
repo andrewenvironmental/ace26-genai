@@ -63,6 +63,9 @@ const samplePrompts = [
 const defaultInstructions =
   "You are an AI assistant for the ACE26 water and environmental workshop. Help participants learn prompt iteration, model settings, and document-grounded answers. Use clear language, be explicit about uncertainty, and when retrieved source snippets are supplied cite them as [source 1], [source 2], etc.";
 
+const emptyTextRetryMinTokens = 1200;
+const emptyTextRetryTokenBump = 600;
+
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
@@ -161,17 +164,36 @@ async function chat(body) {
     throw serviceError(response, responseBody, "Azure AI chat completion failed.");
   }
 
-  const assistantText = extractChatCompletionText(responseBody);
+  let assistantText = extractChatCompletionText(responseBody);
+  let finalUsage = responseBody.usage || null;
+  let finalModel = responseBody.model || deployment;
+  let finalReasoningEffort = reasoningEffort || null;
+
+  if (!assistantText) {
+    const retried = await retryChatForVisibleText({
+      deployment,
+      payload,
+      reasoningEffort,
+      maxCompletionTokens
+    });
+    if (retried?.assistantText) {
+      assistantText = retried.assistantText;
+      finalUsage = retried.usage;
+      finalModel = retried.model;
+      finalReasoningEffort = retried.reasoningEffort;
+    }
+  }
+
   return {
     message: {
       role: "assistant",
       content: assistantText
     },
     sources,
-    usage: responseBody.usage || null,
-    model: responseBody.model || deployment,
+    usage: finalUsage,
+    model: finalModel,
     deployment,
-    reasoningEffort: reasoningEffort || null,
+    reasoningEffort: finalReasoningEffort,
     dataSource: dataSource || null
   };
 }
@@ -202,18 +224,147 @@ async function chatWithResponsesApi({ deployment, messages, systemPrompt, reason
     throw serviceError(response, responseBody, "Azure AI responses request failed.");
   }
 
+  let assistantText = extractResponsesText(responseBody) || "";
+  let finalUsage = normalizeResponsesUsage(responseBody.usage);
+  let finalModel = responseBody.model || deployment;
+  let finalReasoningEffort = responseReasoningEffort || null;
+
+  if (!assistantText) {
+    const retried = await retryResponsesForVisibleText({
+      deployment,
+      payload,
+      reasoningEffort: responseReasoningEffort,
+      maxCompletionTokens
+    });
+    if (retried?.assistantText) {
+      assistantText = retried.assistantText;
+      finalUsage = retried.usage;
+      finalModel = retried.model;
+      finalReasoningEffort = retried.reasoningEffort;
+    }
+  }
+
   return {
     message: {
       role: "assistant",
-      content: extractResponsesText(responseBody) || ""
+      content: assistantText
     },
     sources,
-    usage: normalizeResponsesUsage(responseBody.usage),
-    model: responseBody.model || deployment,
+    usage: finalUsage,
+    model: finalModel,
     deployment,
-    reasoningEffort: responseReasoningEffort || null,
+    reasoningEffort: finalReasoningEffort,
     dataSource: dataSource || null
   };
+}
+
+async function retryChatForVisibleText({ deployment, payload, reasoningEffort, maxCompletionTokens }) {
+  const retryPayload = {
+    ...payload,
+    max_completion_tokens: Math.min(4096, Math.max(emptyTextRetryMinTokens, maxCompletionTokens + emptyTextRetryTokenBump))
+  };
+
+  const fallbackReasoning = fallbackChatReasoningEffort(deployment, reasoningEffort);
+  if (fallbackReasoning) {
+    retryPayload.reasoning_effort = fallbackReasoning;
+  } else {
+    delete retryPayload.reasoning_effort;
+  }
+
+  try {
+    const retryResponse = await fetch(openAiUrl(deployment), {
+      method: "POST",
+      headers: await openAiHeaders(),
+      body: JSON.stringify(retryPayload)
+    });
+
+    const retryBody = await parseResponse(retryResponse);
+    if (!retryResponse.ok) {
+      return null;
+    }
+
+    const assistantText = extractChatCompletionText(retryBody);
+    if (!assistantText) {
+      return null;
+    }
+
+    return {
+      assistantText,
+      usage: retryBody.usage || null,
+      model: retryBody.model || deployment,
+      reasoningEffort: fallbackReasoning || null
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function retryResponsesForVisibleText({ deployment, payload, reasoningEffort, maxCompletionTokens }) {
+  const retryPayload = {
+    ...payload,
+    max_output_tokens: Math.min(4096, Math.max(emptyTextRetryMinTokens, maxCompletionTokens + emptyTextRetryTokenBump))
+  };
+
+  const fallbackReasoning = fallbackResponsesReasoningEffort(deployment, reasoningEffort);
+  if (fallbackReasoning) {
+    retryPayload.reasoning = { effort: fallbackReasoning };
+  } else {
+    delete retryPayload.reasoning;
+  }
+
+  try {
+    const retryResponse = await fetch(openAiResponsesUrl(), {
+      method: "POST",
+      headers: await openAiHeaders(),
+      body: JSON.stringify(retryPayload)
+    });
+
+    const retryBody = await parseResponse(retryResponse);
+    if (!retryResponse.ok) {
+      return null;
+    }
+
+    const assistantText = extractResponsesText(retryBody) || "";
+    if (!assistantText) {
+      return null;
+    }
+
+    return {
+      assistantText,
+      usage: normalizeResponsesUsage(retryBody.usage),
+      model: retryBody.model || deployment,
+      reasoningEffort: fallbackReasoning || null
+    };
+  } catch {
+    return null;
+  }
+}
+
+function fallbackChatReasoningEffort(deployment, currentEffort) {
+  const normalizedDeployment = String(deployment || "").toLowerCase();
+  if (normalizedDeployment.includes("pro")) {
+    if (currentEffort === "high") {
+      return "medium";
+    }
+    return "";
+  }
+
+  return "";
+}
+
+function fallbackResponsesReasoningEffort(deployment, currentEffort) {
+  const normalizedDeployment = String(deployment || "").toLowerCase();
+  if (normalizedDeployment.includes("pro")) {
+    if (currentEffort === "xhigh" || currentEffort === "high") {
+      return "medium";
+    }
+    if (currentEffort === "medium") {
+      return "low";
+    }
+    return "";
+  }
+
+  return "";
 }
 
 async function searchDocuments(query, requestedTop, dataSourceId) {
