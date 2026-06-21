@@ -4,11 +4,17 @@
 !.env.example
 
 # Local Bicep/Azure parameter files may contain tenant-specific values.
+infra/**/*.parameters.json
+!infra/**/*.parameters.example.json
+infra/**/*.bicepparam
+!infra/**/*.example.bicepparam
 infra/**/*.local.json
 infra/**/*.local.bicepparam
 infra/**/local.*
 
 # Azure CLI / deployment outputs
+.azure/
+.tmp/
 .azure/**/*.local.*
 .azure/**/outputs*.json
 .azure/**/what-if*.json
@@ -26,3 +32,7 @@ Thumbs.db
 docs/old/
 plan/
 docs/instructor-notes.md
+docs/colab-fallback.md
+docs/azure-config-discovery.md
+docs/demo-risk-mitigation.md
+docs/deployment-azure-app-service.md
